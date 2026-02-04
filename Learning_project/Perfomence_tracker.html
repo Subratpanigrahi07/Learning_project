@@ -1,0 +1,4384 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Adaptive Performance Tracker</title>
+
+    <!-- Google Font: Outfit -->
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link
+      href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;500;600;700&display=swap"
+      rel="stylesheet"
+    />
+
+    <!-- Tailwind CSS CDN -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script>
+      tailwind.config = {
+        theme: {
+          extend: {
+            fontFamily: {
+              sans: ["Outfit", "system-ui", "sans-serif"],
+            },
+            colors: {
+              slateDeep: "#0f172a",
+              glass: "rgba(30, 41, 59, 0.7)",
+              emeraldSoft: "#22c55e",
+              amberSoft: "#fbbf24",
+              roseSoft: "#fb7185",
+            },
+          },
+        },
+      };
+    </script>
+
+    <!-- Font Awesome 6 -->
+    <link
+      rel="stylesheet"
+      href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css"
+      integrity="sha512-DTOQO9RWCH3ppGqcWaEA1BIZOC6xxalwEsw9c2QQeAIftl+Vegovlnee1c9QX4TctnWMn13TZye+giMm8e2LwA=="
+      crossorigin="anonymous"
+      referrerpolicy="no-referrer"
+    />
+
+    <!-- Chart.js 3.9 -->
+    <script src="https://cdn.jsdelivr.net/npm/chart.js@3.9.1/dist/chart.min.js"></script>
+
+    <!-- Marked.js -->
+    <script src="https://cdn.jsdelivr.net/npm/marked/marked.min.js"></script>
+
+    <style>
+      :root {
+        color-scheme: dark;
+      }
+
+      body {
+        background: radial-gradient(circle at top left, #1d2541 0, #020617 45%, #000 100%);
+        min-height: 100vh;
+      }
+
+      /* Better spacing for ERP feel */
+      #app-shell {
+        display: flex;
+        flex-direction: column;
+        min-height: 100vh;
+      }
+
+      main {
+        flex: 1;
+        display: flex;
+        flex-direction: column;
+      }
+
+      .glass-card {
+        background: rgba(30, 41, 59, 0.7);
+        border: 1px solid rgba(255, 255, 255, 0.08);
+        box-shadow: 0 18px 45px rgba(15, 23, 42, 0.9);
+        backdrop-filter: blur(14px);
+        position: relative;
+        overflow: hidden;
+      }
+
+      .glass-card::before {
+        content: '';
+        position: absolute;
+        top: 0;
+        left: -100%;
+        width: 100%;
+        height: 100%;
+        background: linear-gradient(90deg, transparent, rgba(255, 255, 255, 0.1), transparent);
+        transition: left 0.5s;
+      }
+
+      .glass-card:hover::before {
+        left: 100%;
+      }
+
+      .bg-blob {
+        position: fixed;
+        border-radius: 9999px;
+        filter: blur(60px);
+        opacity: 0.35;
+        z-index: -1;
+      }
+
+      .bg-blob-purple {
+        background: radial-gradient(circle, rgba(168, 85, 247, 0.9), transparent 60%);
+      }
+
+      .bg-blob-indigo {
+        background: radial-gradient(circle, rgba(79, 70, 229, 0.9), transparent 60%);
+      }
+
+      @keyframes float {
+        0%, 100% {
+          transform: translateY(0px) rotate(0deg);
+        }
+        25% {
+          transform: translateY(-15px) rotate(2deg);
+        }
+        50% {
+          transform: translateY(-20px) rotate(0deg);
+        }
+        75% {
+          transform: translateY(-10px) rotate(-2deg);
+        }
+      }
+
+      @keyframes fade-in {
+        0% {
+          opacity: 0;
+          transform: translateY(20px) scale(0.95);
+        }
+        100% {
+          opacity: 1;
+          transform: translateY(0) scale(1);
+        }
+      }
+
+      @keyframes slide-in-right {
+        0% {
+          opacity: 0;
+          transform: translateX(30px);
+        }
+        100% {
+          opacity: 1;
+          transform: translateX(0);
+        }
+      }
+
+      @keyframes slide-in-left {
+        0% {
+          opacity: 0;
+          transform: translateX(-30px);
+        }
+        100% {
+          opacity: 1;
+          transform: translateX(0);
+        }
+      }
+
+      @keyframes scale-in {
+        0% {
+          opacity: 0;
+          transform: scale(0.8);
+        }
+        100% {
+          opacity: 1;
+          transform: scale(1);
+        }
+      }
+
+      @keyframes pulse-glow {
+        0%, 100% {
+          box-shadow: 0 0 20px rgba(34, 197, 94, 0.3);
+        }
+        50% {
+          box-shadow: 0 0 30px rgba(34, 197, 94, 0.6);
+        }
+      }
+
+      @keyframes shimmer {
+        0% {
+          background-position: -1000px 0;
+        }
+        100% {
+          background-position: 1000px 0;
+        }
+      }
+
+      @keyframes spin-soft {
+        from {
+          transform: rotate(0deg);
+        }
+        to {
+          transform: rotate(360deg);
+        }
+      }
+
+      @keyframes bounce-subtle {
+        0%, 100% {
+          transform: translateY(0);
+        }
+        50% {
+          transform: translateY(-5px);
+        }
+      }
+
+      .animate-float {
+        animation: float 8s ease-in-out infinite;
+      }
+
+      .animate-fade-in {
+        animation: fade-in 0.6s cubic-bezier(0.4, 0, 0.2, 1) forwards;
+      }
+
+      .animate-slide-in-right {
+        animation: slide-in-right 0.5s ease-out forwards;
+      }
+
+      .animate-slide-in-left {
+        animation: slide-in-left 0.5s ease-out forwards;
+      }
+
+      .animate-scale-in {
+        animation: scale-in 0.4s cubic-bezier(0.34, 1.56, 0.64, 1) forwards;
+      }
+
+      .animate-spin-soft {
+        animation: spin-soft 1.2s linear infinite;
+      }
+
+      .animate-bounce-subtle {
+        animation: bounce-subtle 2s ease-in-out infinite;
+      }
+
+      /* Enhanced hover effects */
+      .glass-card {
+        transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+      }
+
+      .glass-card:hover {
+        transform: translateY(-4px) scale(1.01);
+        box-shadow: 0 25px 50px rgba(15, 23, 42, 1);
+      }
+
+      /* Stagger animation for cards */
+      [data-view] > * {
+        animation-delay: calc(var(--stagger-delay, 0) * 0.1s);
+      }
+
+      /* Smooth transitions */
+      * {
+        transition-property: color, background-color, border-color, transform, box-shadow, opacity;
+        transition-timing-function: cubic-bezier(0.4, 0, 0.2, 1);
+        transition-duration: 200ms;
+      }
+
+      /* Loading shimmer effect */
+      @keyframes shimmer {
+        0% {
+          background-position: -1000px 0;
+        }
+        100% {
+          background-position: 1000px 0;
+        }
+      }
+
+      .shimmer {
+        background: linear-gradient(90deg, transparent, rgba(255, 255, 255, 0.1), transparent);
+        background-size: 1000px 100%;
+        animation: shimmer 2s infinite;
+      }
+
+      /* Enhanced card hover effects */
+      [data-nav-card] {
+        position: relative;
+        overflow: hidden;
+      }
+
+      [data-nav-card]::after {
+        content: '';
+        position: absolute;
+        top: 50%;
+        left: 50%;
+        width: 0;
+        height: 0;
+        border-radius: 50%;
+        background: rgba(255, 255, 255, 0.1);
+        transform: translate(-50%, -50%);
+        transition: width 0.6s, height 0.6s;
+      }
+
+      [data-nav-card]:hover::after {
+        width: 300px;
+        height: 300px;
+      }
+
+      button {
+        transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+      }
+
+      button:hover {
+        transform: translateY(-2px);
+      }
+
+      button:active {
+        transform: translateY(0);
+      }
+
+      .scrollbar-thin::-webkit-scrollbar {
+        width: 6px;
+        height: 6px;
+      }
+
+      .scrollbar-thin::-webkit-scrollbar-thumb {
+        background-color: rgba(148, 163, 184, 0.7);
+        border-radius: 9999px;
+      }
+
+      .scrollbar-thin::-webkit-scrollbar-track {
+        background-color: transparent;
+      }
+
+      /* Light Mode Styles - Cool & Modern */
+      body.light-mode {
+        background: linear-gradient(135deg, #667eea 0%, #764ba2 25%, #f093fb 50%, #4facfe 75%, #00f2fe 100%);
+        background-size: 400% 400%;
+        animation: gradientShift 15s ease infinite;
+        color: #1e293b;
+      }
+
+      @keyframes gradientShift {
+        0% { background-position: 0% 50%; }
+        50% { background-position: 100% 50%; }
+        100% { background-position: 0% 50%; }
+      }
+
+      body.light-mode .bg-blob-purple {
+        background: radial-gradient(circle, rgba(102, 126, 234, 0.4), transparent 60%);
+      }
+
+      body.light-mode .bg-blob-indigo {
+        background: radial-gradient(circle, rgba(118, 75, 162, 0.4), transparent 60%);
+      }
+
+      body.light-mode .glass-card {
+        background: rgba(255, 255, 255, 0.95);
+        border: 1px solid rgba(255, 255, 255, 0.5);
+        box-shadow: 0 20px 60px rgba(102, 126, 234, 0.2), 0 0 0 1px rgba(255, 255, 255, 0.1);
+        backdrop-filter: blur(20px) saturate(180%);
+        color: #1e293b;
+      }
+
+      body.light-mode .glass-card:hover {
+        box-shadow: 0 25px 70px rgba(102, 126, 234, 0.3), 0 0 0 1px rgba(255, 255, 255, 0.2);
+        transform: translateY(-2px);
+        transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+      }
+
+      body.light-mode .text-slate-100,
+      body.light-mode .text-slate-50 {
+        color: #0f172a !important;
+      }
+
+      body.light-mode .text-slate-300 {
+        color: #475569 !important;
+      }
+
+      body.light-mode .text-slate-400 {
+        color: #64748b !important;
+      }
+
+      body.light-mode .bg-slate-900,
+      body.light-mode .bg-slate-800 {
+        background-color: rgba(248, 250, 252, 0.9) !important;
+      }
+
+      body.light-mode .border-slate-800,
+      body.light-mode .border-slate-700 {
+        border-color: rgba(148, 163, 184, 0.3) !important;
+      }
+
+      body.light-mode .bg-slate-800\/80 {
+        background-color: rgba(248, 250, 252, 0.8) !important;
+      }
+
+      body.light-mode input,
+      body.light-mode select,
+      body.light-mode textarea {
+        background-color: rgba(255, 255, 255, 0.9) !important;
+        border-color: rgba(148, 163, 184, 0.4) !important;
+        color: #0f172a !important;
+      }
+
+      body.light-mode input:focus,
+      body.light-mode select:focus,
+      body.light-mode textarea:focus {
+        border-color: #667eea !important;
+        box-shadow: 0 0 0 3px rgba(102, 126, 234, 0.1) !important;
+      }
+
+      body.light-mode .text-emerald-300,
+      body.light-mode .text-emerald-400 {
+        color: #10b981 !important;
+      }
+
+      body.light-mode .text-sky-300,
+      body.light-mode .text-sky-400 {
+        color: #3b82f6 !important;
+      }
+
+      body.light-mode .text-amber-300,
+      body.light-mode .text-amber-400 {
+        color: #f59e0b !important;
+      }
+
+      body.light-mode .text-violet-300,
+      body.light-mode .text-violet-400 {
+        color: #8b5cf6 !important;
+      }
+
+      body.light-mode .text-rose-300,
+      body.light-mode .text-rose-400 {
+        color: #f43f5e !important;
+      }
+
+      /* Enhanced button styles for light mode */
+      body.light-mode button {
+        transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+      }
+
+      body.light-mode button:hover {
+        transform: translateY(-2px);
+        box-shadow: 0 10px 25px rgba(102, 126, 234, 0.3);
+      }
+    </style>
+  </head>
+
+  <body class="font-sans text-slate-100">
+    <!-- Background Blobs -->
+    <div class="bg-blob bg-blob-purple w-80 h-80 top-[-40px] left-[-40px]"></div>
+    <div class="bg-blob bg-blob-indigo w-96 h-96 bottom-[-60px] right-[-40px]"></div>
+
+    <!-- Toast -->
+    <div
+      id="toast"
+      class="fixed top-5 right-5 z-40 hidden px-4 py-3 rounded-xl glass-card text-sm flex items-center gap-3"
+    >
+      <span id="toast-icon" class="text-rose-400">
+        <i class="fa-solid fa-circle-exclamation"></i>
+      </span>
+      <span id="toast-message" class="text-slate-100"></span>
+    </div>
+
+    <!-- App Shell -->
+    <div id="app-shell" class="hidden min-h-screen flex flex-col">
+      <div class="flex min-h-screen">
+        <!-- Sidebar -->
+        <aside
+          id="sidebar"
+          class="glass-card w-72 shrink-0 border-r border-slate-800/60 flex flex-col p-5 gap-6 relative"
+        >
+          <div class="flex items-center justify-between mb-2">
+            <div class="flex items-center gap-3">
+              <div
+                class="h-10 w-10 rounded-2xl bg-gradient-to-tr from-indigo-500 via-purple-500 to-emerald-400 flex items-center justify-center animate-float"
+              >
+                <i class="fa-solid fa-chart-line text-lg"></i>
+              </div>
+              <div>
+                <div class="text-xs uppercase tracking-[0.2em] text-slate-400">
+                  Adaptive
+                </div>
+                <div class="font-semibold text-slate-50">
+                  Performance Tracker
+                </div>
+              </div>
+            </div>
+            <button
+              id="sidebar-toggle"
+              class="md:hidden inline-flex items-center justify-center h-9 w-9 rounded-xl bg-slate-800/80 hover:bg-slate-700 transition"
+            >
+              <i class="fa-solid fa-bars text-slate-200"></i>
+            </button>
+          </div>
+
+          <div class="mt-2 mb-3 text-xs text-slate-400 space-y-1">
+            <div id="sidebar-role" class="font-medium text-slate-100"></div>
+            <div id="sidebar-user" class="truncate"></div>
+          </div>
+
+          <nav class="mt-2 flex-1 overflow-y-auto scrollbar-thin">
+            <ul class="space-y-1 text-sm" id="nav-links">
+              <!-- Links injected by JS based on role -->
+            </ul>
+          </nav>
+          
+          <!-- Quick Stats Summary -->
+          <div id="sidebar-quick-stats" class="mt-4 p-3 rounded-xl bg-slate-900/40 border border-slate-800/60 text-xs hidden">
+            <p class="text-slate-400 mb-2">Quick Stats</p>
+            <div id="sidebar-stats-content" class="space-y-1">
+              <!-- Injected by JS -->
+            </div>
+          </div>
+
+          <div class="pt-4 border-t border-slate-800 mt-4 space-y-2">
+            <div class="flex items-center justify-between gap-2">
+              <button
+                id="theme-toggle"
+                class="flex items-center gap-2 text-xs text-slate-300 hover:text-emerald-300 transition px-2 py-1 rounded-lg hover:bg-slate-800/60"
+                title="Toggle Dark/Light Mode (T)"
+              >
+                <i class="fa-solid fa-moon"></i>
+                <span class="hidden md:inline">Theme</span>
+              </button>
+              <button
+                id="ai-chat-toggle"
+                class="flex items-center gap-2 text-xs text-slate-300 hover:text-violet-300 transition px-2 py-1 rounded-lg hover:bg-slate-800/60"
+                title="AI Assistant (A)"
+              >
+                <i class="fa-solid fa-robot"></i>
+                <span class="hidden md:inline">AI Chat</span>
+              </button>
+            </div>
+            <div class="flex items-center justify-between gap-3">
+              <button
+                id="view-notifications-btn"
+                class="flex items-center gap-2 text-xs text-slate-300 hover:text-emerald-300 transition relative"
+              >
+                <i class="fa-solid fa-bell"></i>
+                <span>Notifications</span>
+                <span id="notification-badge" class="hidden absolute -top-1 -right-1 h-4 w-4 rounded-full bg-rose-500 text-[8px] flex items-center justify-center text-white font-bold">0</span>
+              </button>
+              <button
+                id="logout-btn"
+                class="flex items-center gap-2 text-xs px-3 py-1.5 rounded-lg bg-slate-800/80 hover:bg-rose-600/80 text-slate-100 transition"
+              >
+                <i class="fa-solid fa-arrow-right-from-bracket"></i>
+                <span>Logout</span>
+              </button>
+            </div>
+          </div>
+        </aside>
+
+        <!-- Content Area -->
+        <div class="flex-1 flex flex-col min-w-0">
+          <!-- Top Bar -->
+          <div class="glass-card border-b border-slate-800/60 px-6 py-4 flex items-center justify-between shrink-0">
+            <div id="breadcrumbs" class="flex items-center gap-2 text-sm">
+              <span class="text-slate-400">Home</span>
+              <i class="fa-solid fa-chevron-right text-[10px] text-slate-600"></i>
+              <span class="text-slate-200 font-medium" id="breadcrumb-current">Dashboard</span>
+            </div>
+            <div class="flex items-center gap-3">
+              <button
+                id="btn-analyze-performance"
+                class="inline-flex items-center gap-2 px-3 py-1.5 rounded-lg bg-gradient-to-r from-emerald-500 to-cyan-500 text-slate-950 text-xs font-semibold shadow-lg shadow-emerald-500/30 hover:shadow-emerald-400/50 transition"
+              >
+                <i class="fa-solid fa-wand-magic-sparkles"></i>
+                <span class="hidden md:inline">AI Analysis</span>
+              </button>
+              <button
+                id="btn-export-report"
+                class="inline-flex items-center gap-2 px-3 py-1.5 rounded-lg bg-slate-800/80 hover:bg-slate-700 text-xs text-slate-200 transition"
+                title="Export Report (E)"
+              >
+                <i class="fa-solid fa-file-export"></i>
+              </button>
+            </div>
+          </div>
+
+          <!-- Main Content -->
+          <main class="flex-1 overflow-y-auto scrollbar-thin">
+            <div class="max-w-7xl mx-auto p-6 lg:p-8 space-y-6">
+            <!-- Student Dashboard Overview -->
+            <section
+              data-view="student-dashboard"
+              class="hidden flex-col gap-6 animate-fade-in"
+            >
+              <div class="mb-2">
+                <h1 class="text-3xl font-bold text-slate-50 mb-2">Dashboard Overview</h1>
+                <div class="flex items-center justify-between">
+                  <p class="text-slate-400">Welcome back, <span id="student-welcome-name" class="text-emerald-300 font-medium"></span>. Here's your performance summary.</p>
+                  <button id="btn-set-goals" class="text-xs flex items-center gap-2 px-3 py-1.5 rounded-lg bg-slate-800/60 hover:bg-slate-700 text-slate-300 border border-slate-700 transition">
+                    <i class="fa-solid fa-bullseye"></i> Set Goals
+                  </button>
+                </div>
+              </div>
+
+
+              <!-- Quick Stats Cards -->
+              <div class="grid grid-cols-1 md:grid-cols-4 gap-4">
+                <div class="glass-card rounded-xl p-5 border border-emerald-500/20 hover:border-emerald-500/40 transition-all duration-300 cursor-pointer group animate-scale-in" data-nav-card="student-attendance" style="--stagger-delay: 0">
+                  <div class="flex items-center justify-between mb-3">
+                    <div class="h-12 w-12 rounded-xl bg-emerald-500/10 text-emerald-300 flex items-center justify-center group-hover:bg-emerald-500/20 group-hover:scale-110 transition-all duration-300">
+                      <i class="fa-solid fa-calendar-check text-lg"></i>
+                    </div>
+                    <i class="fa-solid fa-arrow-right text-slate-500 group-hover:text-emerald-300 group-hover:translate-x-1 transition-all duration-300"></i>
+                  </div>
+                  <p class="text-xs text-slate-400 mb-1">Aggregate Attendance</p>
+                  <div class="flex items-baseline gap-2 mb-2">
+                    <p id="student-agg-attendance" class="text-2xl font-bold text-slate-50">0%</p>
+                    <p id="student-goal-attendance" class="text-[10px] text-slate-500">Target: -</p>
+                  </div>
+                  <div class="w-full h-2 bg-slate-800 rounded-full overflow-hidden">
+                    <div id="student-agg-attendance-bar" class="h-full bg-gradient-to-r from-emerald-400 to-emerald-500 rounded-full transition-all duration-1000 ease-out" style="width: 0%"></div>
+                  </div>
+                  <p class="text-[10px] text-slate-500 mt-2 group-hover:text-emerald-300 transition-colors">Click to view details →</p>
+                </div>
+
+                <div class="glass-card rounded-xl p-5 border border-sky-500/20 hover:border-sky-500/40 transition-all duration-300 cursor-pointer group animate-scale-in" data-nav-card="student-marks" style="--stagger-delay: 1">
+                  <div class="flex items-center justify-between mb-3">
+                    <div class="h-12 w-12 rounded-xl bg-sky-500/10 text-sky-300 flex items-center justify-center group-hover:bg-sky-500/20 group-hover:scale-110 transition-all duration-300">
+                      <i class="fa-solid fa-pen-ruler text-lg"></i>
+                    </div>
+                    <i class="fa-solid fa-arrow-right text-slate-500 group-hover:text-sky-300 group-hover:translate-x-1 transition-all duration-300"></i>
+                  </div>
+                  <p class="text-xs text-slate-400 mb-1">Average Marks</p>
+                  <div class="flex items-baseline gap-2 mb-2">
+                    <p id="student-avg-marks" class="text-2xl font-bold text-slate-50">0</p>
+                    <p id="student-goal-marks" class="text-[10px] text-slate-500">Target: -</p>
+                  </div>
+                  <div class="w-full h-2 bg-slate-800 rounded-full overflow-hidden">
+                    <div id="student-avg-marks-bar" class="h-full bg-gradient-to-r from-sky-400 to-sky-500 rounded-full transition-all duration-1000 ease-out" style="width: 0%"></div>
+                  </div>
+                  <p class="text-[10px] text-slate-500 mt-2 group-hover:text-sky-300 transition-colors">Click to view details →</p>
+                </div>
+
+                <div class="glass-card rounded-xl p-5 border border-amber-500/20 hover:border-amber-500/40 transition-all duration-300 cursor-pointer group animate-scale-in" data-nav-card="student-analytics" style="--stagger-delay: 2">
+                  <div class="flex items-center justify-between mb-3">
+                    <div class="h-12 w-12 rounded-xl bg-amber-500/10 text-amber-300 flex items-center justify-center group-hover:bg-amber-500/20 group-hover:scale-110 transition-all duration-300">
+                      <i class="fa-solid fa-chart-line text-lg"></i>
+                    </div>
+                    <i class="fa-solid fa-arrow-right text-slate-500 group-hover:text-amber-300 group-hover:translate-x-1 transition-all duration-300"></i>
+                  </div>
+                  <p class="text-xs text-slate-400 mb-1">Performance Status</p>
+                  <p id="student-overall-category" class="text-xl font-bold text-slate-50 mb-2">
+                    <span class="inline-flex items-center gap-2 px-2 py-1 rounded-lg text-xs bg-slate-900/40">
+                      <span class="inline-flex h-2 w-2 rounded-full bg-slate-500 animate-pulse"></span>
+                      <span>Loading...</span>
+                    </span>
+                  </p>
+                  <p class="text-[10px] text-slate-500 mt-2 group-hover:text-amber-300 transition-colors">View analytics →</p>
+                </div>
+
+                <div class="glass-card rounded-xl p-5 border border-violet-500/20 hover:border-violet-500/40 transition-all duration-300 cursor-pointer group animate-scale-in" data-nav-card="student-profile" style="--stagger-delay: 3">
+                  <div class="flex items-center justify-between mb-3">
+                    <div class="h-12 w-12 rounded-xl bg-violet-500/10 text-violet-300 flex items-center justify-center group-hover:bg-violet-500/20 group-hover:scale-110 transition-all duration-300">
+                      <i class="fa-solid fa-user text-lg"></i>
+                    </div>
+                    <i class="fa-solid fa-arrow-right text-slate-500 group-hover:text-violet-300 group-hover:translate-x-1 transition-all duration-300"></i>
+                  </div>
+                  <p class="text-xs text-slate-400 mb-1">Profile</p>
+                  <p id="student-profile-preview" class="text-sm font-semibold text-slate-50 mb-2 truncate">View Profile</p>
+                  <p class="text-[10px] text-slate-500 mt-2 group-hover:text-violet-300 transition-colors">Manage account →</p>
+                </div>
+              </div>
+
+            <!-- Layout: Subjects + AI Panel -->
+            <div class="grid grid-cols-1 lg:grid-cols-3 gap-6 items-start">
+              <!-- Subject-wise cards -->
+              <div class="glass-card rounded-2xl p-4 lg:col-span-2">
+                <div class="flex items-center justify-between mb-3">
+                  <div>
+                    <p class="text-xs text-slate-400 uppercase tracking-[0.15em]">
+                      Subject-wise View
+                    </p>
+                    <h2 class="text-sm font-semibold text-slate-100 mt-1">
+                      Attendance & Internal Marks
+                    </h2>
+                  </div>
+                  <div class="flex items-center gap-2">
+                    <input
+                      id="student-subject-search"
+                      type="text"
+                      placeholder="Search subjects..."
+                      class="text-xs px-2 py-1 rounded-lg bg-slate-900/60 border border-slate-700/80 focus:outline-none focus:ring-1 focus:ring-emerald-400 w-32"
+                    />
+                  </div>
+                </div>
+                <div id="student-subject-list" class="space-y-3 max-h-[360px] overflow-y-auto scrollbar-thin">
+                  <!-- Subject cards injected by JS -->
+                </div>
+              </div>
+
+              <!-- AI Study Companion -->
+              <div class="glass-card rounded-2xl p-4 space-y-3">
+                <div class="flex items-center justify-between">
+                  <div>
+                    <p class="text-xs text-slate-400 uppercase tracking-[0.16em]">
+                      AI Study Companion
+                    </p>
+                    <h2 class="text-sm font-semibold text-slate-100 mt-1">
+                      Personalized insights & motivation
+                    </h2>
+                  </div>
+                  <div
+                    class="h-9 w-9 rounded-xl bg-violet-500/20 text-violet-300 flex items-center justify-center"
+                  >
+                    <i class="fa-solid fa-sparkles text-sm"></i>
+                  </div>
+                </div>
+                <div
+                  id="student-ai-output"
+                  class="mt-2 text-xs leading-relaxed text-slate-300 max-h-72 overflow-y-auto scrollbar-thin prose prose-invert prose-sm prose-slate"
+                >
+                  <p class="text-slate-400">
+                    Click
+                    <span class="font-semibold text-emerald-300">“Analyze Performance (AI)”</span>
+                    above to generate study tips based on your latest records.
+                  </p>
+                </div>
+              </div>
+            </div>
+
+            <!-- Profile & Notifications -->
+            <div class="grid grid-cols-1 lg:grid-cols-3 gap-6 mt-4">
+              <!-- Profile -->
+              <div class="glass-card rounded-2xl p-4 space-y-2 lg:col-span-1">
+                <div class="flex items-center justify-between">
+                  <div>
+                    <p class="text-xs text-slate-400 uppercase tracking-[0.18em]">
+                      Profile
+                    </p>
+                    <h2 class="text-sm font-semibold text-slate-100 mt-1">
+                      Academic identity
+                    </h2>
+                  </div>
+                  <div
+                    class="h-9 w-9 rounded-xl bg-sky-500/20 text-sky-300 flex items-center justify-center"
+                  >
+                    <i class="fa-solid fa-id-card"></i>
+                  </div>
+                </div>
+                <dl class="mt-2 text-xs text-slate-300 space-y-2">
+                  <div class="flex justify-between gap-2">
+                    <dt class="text-slate-400">Name</dt>
+                    <dd id="profile-name" class="font-medium text-right"></dd>
+                  </div>
+                  <div class="flex justify-between gap-2">
+                    <dt class="text-slate-400">Roll No</dt>
+                    <dd id="profile-roll" class="font-mono text-xs text-emerald-300 text-right"></dd>
+                  </div>
+                  <div class="flex justify-between gap-2">
+                    <dt class="text-slate-400">Email</dt>
+                    <dd id="profile-email" class="text-right truncate max-w-[150px] text-slate-300"></dd>
+                  </div>
+                  <div class="flex justify-between gap-2">
+                    <dt class="text-slate-400">Branch</dt>
+                    <dd id="profile-branch" class="text-right"></dd>
+                  </div>
+                  <div class="flex justify-between gap-2">
+                    <dt class="text-slate-400">Semester</dt>
+                    <dd id="profile-sem" class="text-right"></dd>
+                  </div>
+                </dl>
+              </div>
+
+              <!-- Notifications -->
+              <div class="glass-card rounded-2xl p-4 space-y-3 lg:col-span-2">
+                <div class="flex items-center justify-between">
+                  <div>
+                    <p class="text-xs text-slate-400 uppercase tracking-[0.18em]">
+                      Notifications
+                    </p>
+                    <h2 class="text-sm font-semibold text-slate-100 mt-1">
+                      Latest announcements
+                    </h2>
+                  </div>
+                  <div
+                    class="h-9 w-9 rounded-xl bg-amber-500/20 text-amber-300 flex items-center justify-center"
+                  >
+                    <i class="fa-solid fa-bullhorn"></i>
+                  </div>
+                </div>
+                <div
+                  id="student-notifications"
+                  class="mt-1 text-xs text-slate-300 max-h-60 overflow-y-auto space-y-2 scrollbar-thin"
+                >
+                  <!-- Notices injected -->
+                </div>
+              </div>
+            </div>
+          </section>
+
+          <!-- Student Attendance View -->
+          <section
+            data-view="student-attendance"
+            class="hidden flex-col gap-6 animate-fade-in"
+          >
+            <header class="flex items-center justify-between">
+              <div>
+                <div class="flex items-center gap-2 text-xs font-medium uppercase text-emerald-300">
+                  <span class="inline-flex h-5 w-5 rounded-full bg-emerald-500/10 items-center justify-center">
+                    <i class="fa-solid fa-calendar-check text-[11px]"></i>
+                  </span>
+                  <span>Attendance Details</span>
+                </div>
+                <h1 class="mt-1 text-2xl font-semibold text-slate-50">
+                  Subject-wise Attendance
+                </h1>
+              </div>
+            </header>
+            <div id="student-attendance-list" class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+              <!-- Injected by JS -->
+            </div>
+          </section>
+
+          <!-- Student Marks View -->
+          <section
+            data-view="student-marks"
+            class="hidden flex-col gap-6 animate-fade-in"
+          >
+            <header class="flex items-center justify-between">
+              <div>
+                <div class="flex items-center gap-2 text-xs font-medium uppercase text-sky-300">
+                  <span class="inline-flex h-5 w-5 rounded-full bg-sky-500/10 items-center justify-center">
+                    <i class="fa-solid fa-pen-ruler text-[11px]"></i>
+                  </span>
+                  <span>Internal Marks</span>
+                </div>
+                <h1 class="mt-1 text-2xl font-semibold text-slate-50">
+                  Subject-wise Performance
+                </h1>
+              </div>
+            </header>
+            <div id="student-marks-list" class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+              <!-- Injected by JS -->
+            </div>
+          </section>
+
+          <!-- Student Profile View -->
+          <section
+            data-view="student-profile"
+            class="hidden flex-col gap-6 animate-fade-in"
+          >
+            <header class="flex items-center justify-between">
+              <div>
+                <div class="flex items-center gap-2 text-xs font-medium uppercase text-violet-300">
+                  <span class="inline-flex h-5 w-5 rounded-full bg-violet-500/10 items-center justify-center">
+                    <i class="fa-solid fa-user text-[11px]"></i>
+                  </span>
+                  <span>Student Profile</span>
+                </div>
+                <h1 class="mt-1 text-2xl font-semibold text-slate-50">
+                  My Academic Identity
+                </h1>
+              </div>
+            </header>
+
+            <div class="grid grid-cols-1 lg:grid-cols-3 gap-6">
+              <!-- Profile Card -->
+              <div class="glass-card rounded-2xl p-6 lg:col-span-1 flex flex-col items-center text-center space-y-4">
+                <div class="h-24 w-24 rounded-full bg-gradient-to-tr from-violet-500 via-purple-500 to-indigo-500 p-1">
+                  <div class="h-full w-full rounded-full bg-slate-900 flex items-center justify-center overflow-hidden">
+                     <i class="fa-solid fa-user-graduate text-4xl text-slate-200"></i>
+                  </div>
+                </div>
+                <div>
+                  <h2 id="profile-view-name" class="text-xl font-bold text-slate-50"></h2>
+                </div>
+                
+                <div class="w-full grid grid-cols-2 gap-4 text-left mt-4">
+                   <div class="p-3 rounded-xl bg-slate-800/50 border border-slate-700/50">
+                      <p class="text-[10px] text-slate-400 uppercase">Branch</p>
+                      <p id="profile-view-branch" class="font-semibold text-slate-200"></p>
+                   </div>
+                   <div class="p-3 rounded-xl bg-slate-800/50 border border-slate-700/50">
+                      <p class="text-[10px] text-slate-400 uppercase">Semester</p>
+                      <p id="profile-view-sem" class="font-semibold text-slate-200"></p>
+                   </div>
+                   <div class="p-3 rounded-xl bg-slate-800/50 border border-slate-700/50 col-span-2">
+                      <p class="text-[10px] text-slate-400 uppercase">Roll Number</p>
+                      <p id="profile-view-roll" class="font-mono font-semibold text-emerald-300"></p>
+                   </div>
+                   <div class="p-3 rounded-xl bg-slate-800/50 border border-slate-700/50 col-span-2">
+                      <p class="text-[10px] text-slate-400 uppercase">Email</p>
+                      <p id="profile-view-email" class="font-semibold text-slate-200 truncate text-xs"></p>
+                   </div>
+                </div>
+              </div>
+
+              <!-- Stats & Badges -->
+              <div class="lg:col-span-2 space-y-6">
+                <!-- Stats Row -->
+                <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
+                   <div class="glass-card rounded-xl p-4 border border-emerald-500/20">
+                      <p class="text-xs text-slate-400">Attendance</p>
+                      <p id="profile-attendance" class="text-2xl font-bold text-slate-50">0%</p>
+                   </div>
+                   <div class="glass-card rounded-xl p-4 border border-sky-500/20">
+                      <p class="text-xs text-slate-400">Avg Marks</p>
+                      <p id="profile-marks" class="text-2xl font-bold text-slate-50">0</p>
+                   </div>
+                   <div class="glass-card rounded-xl p-4 border border-amber-500/20">
+                      <p class="text-xs text-slate-400">Status</p>
+                      <p id="profile-status" class="text-2xl font-bold text-slate-50">-</p>
+                   </div>
+                </div>
+
+                <!-- Badges -->
+                <div class="glass-card rounded-2xl p-6">
+                  <div class="flex items-center gap-3 mb-4">
+                    <div class="h-10 w-10 rounded-xl bg-amber-500/10 text-amber-300 flex items-center justify-center">
+                      <i class="fa-solid fa-medal text-lg"></i>
+                    </div>
+                    <div>
+                      <h3 class="text-lg font-semibold text-slate-100">Achievements & Badges</h3>
+                      <p class="text-xs text-slate-400">Earned through consistent performance</p>
+                    </div>
+                  </div>
+                  <div id="badges-container" class="flex flex-wrap gap-3">
+                    <!-- Badges injected here -->
+                  </div>
+                </div>
+              </div>
+            </div>
+          </section>
+
+          <!-- Faculty Dashboard Overview -->
+          <section
+            data-view="faculty-dashboard"
+            class="hidden flex-col gap-6 animate-fade-in"
+          >
+            <header class="flex flex-col md:flex-row md:items-center md:justify-between gap-4">
+              <div>
+                <div class="flex items-center gap-2 text-xs font-medium uppercase text-sky-300">
+                  <span class="inline-flex h-5 w-5 rounded-full bg-sky-500/10 items-center justify-center">
+                    <i class="fa-solid fa-chalkboard-user text-[11px]"></i>
+                  </span>
+                  <span>Faculty Workspace</span>
+                </div>
+                <h1 class="mt-1 text-2xl font-semibold text-slate-50">
+                  Overview
+                </h1>
+              </div>
+            </header>
+
+            <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
+              <div class="glass-card rounded-xl p-5 border border-indigo-500/20">
+                <p class="text-xs text-slate-400 uppercase">Total Students</p>
+                <p id="fac-dash-total" class="text-3xl font-bold text-slate-50 mt-2">0</p>
+              </div>
+              <div class="glass-card rounded-xl p-5 border border-emerald-500/20">
+                <p class="text-xs text-slate-400 uppercase">Avg Attendance</p>
+                <p id="fac-dash-avg" class="text-3xl font-bold text-slate-50 mt-2">0%</p>
+              </div>
+              <div class="glass-card rounded-xl p-5 border border-rose-500/20">
+                <p class="text-xs text-slate-400 uppercase">At-Risk Students</p>
+                <p id="fac-dash-risk" class="text-3xl font-bold text-slate-50 mt-2">0</p>
+              </div>
+            </div>
+
+            <!-- Class Overview Table (Restored) -->
+            <div class="glass-card rounded-2xl p-4">
+                <div class="flex items-center justify-between mb-3">
+                  <div>
+                    <p class="text-xs text-slate-400 uppercase tracking-[0.16em]">
+                      Class Overview
+                    </p>
+                    <h2 class="text-sm font-semibold text-slate-100 mt-1">
+                      Student Performance Summary
+                    </h2>
+                  </div>
+                  <button
+                    onclick="switchView('faculty-class')"
+                    class="text-xs text-emerald-400 hover:text-emerald-300 transition"
+                  >
+                    View Full Details →
+                  </button>
+                </div>
+                <div class="overflow-x-auto scrollbar-thin max-h-[340px]">
+                  <table class="min-w-full text-xs">
+                    <thead class="sticky top-0 z-10 bg-slate-900/80 backdrop-blur">
+                      <tr class="text-slate-400 text-[11px]">
+                        <th class="text-left font-medium py-2 pr-3">Student</th>
+                        <th class="text-left font-medium py-2 px-3">Roll No</th>
+                        <th class="text-left font-medium py-2 px-3 w-40">Attendance</th>
+                        <th class="text-left font-medium py-2 px-3 w-40">Avg Marks</th>
+                        <th class="text-left font-medium py-2 px-3">Status</th>
+                      </tr>
+                    </thead>
+                    <tbody id="faculty-dashboard-table" class="divide-y divide-slate-800/70">
+                      <!-- Rows injected by JS -->
+                    </tbody>
+                  </table>
+                </div>
+            </div>
+          </section>
+
+          <!-- Faculty Class Management -->
+          <section
+            data-view="faculty-class"
+            class="hidden flex-col gap-6 animate-fade-in"
+          >
+            <header class="flex items-center justify-between">
+              <div>
+                <div class="flex items-center gap-2 text-xs font-medium uppercase text-emerald-300">
+                  <span class="inline-flex h-5 w-5 rounded-full bg-emerald-500/10 items-center justify-center">
+                    <i class="fa-solid fa-users text-[11px]"></i>
+                  </span>
+                  <span>Class Management</span>
+                </div>
+                <h1 class="mt-1 text-2xl font-semibold text-slate-50">
+                  Student Analytics
+                </h1>
+              </div>
+            </header>
+
+            <div class="glass-card rounded-2xl p-4">
+                <div class="flex items-center justify-between mb-3">
+                  <div>
+                    <p class="text-xs text-slate-400 uppercase tracking-[0.16em]">
+                      Class Analytics
+                    </p>
+                    <h2 class="text-sm font-semibold text-slate-100 mt-1">
+                      Attendance & Risk Overview
+                    </h2>
+                  </div>
+                  <div class="flex items-center gap-2">
+                    <span
+                      id="faculty-section-label"
+                      class="inline-flex items-center gap-2 text-[11px] px-2.5 py-1 rounded-full bg-slate-900/60 text-slate-300"
+                    >
+                      <i class="fa-solid fa-building-columns opacity-70"></i>
+                      <span></span>
+                    </span>
+                    <button
+                      id="btn-bulk-upload"
+                      class="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-lg bg-emerald-500/20 text-emerald-300 text-[11px] hover:bg-emerald-500/30 transition border border-emerald-500/40"
+                      title="Bulk Upload"
+                    >
+                      <i class="fa-solid fa-upload"></i>
+                      <span>Bulk</span>
+                    </button>
+                    <button
+                      id="btn-export-class"
+                      class="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-lg bg-slate-800/80 text-slate-300 text-[11px] hover:bg-slate-700 transition"
+                      title="Export Class Data"
+                    >
+                      <i class="fa-solid fa-file-csv"></i>
+                    </button>
+                  </div>
+                </div>
+                <div class="mb-2 flex items-center gap-2">
+                  <input
+                    id="faculty-student-search"
+                    type="text"
+                    placeholder="Search students..."
+                    class="text-xs px-2 py-1 rounded-lg bg-slate-900/60 border border-slate-700/80 focus:outline-none focus:ring-1 focus:ring-emerald-400 flex-1"
+                  />
+                  <select
+                    id="faculty-status-filter"
+                    class="text-xs px-2 py-1 rounded-lg bg-slate-900/60 border border-slate-700/80 focus:outline-none focus:ring-1 focus:ring-emerald-400"
+                  >
+                    <option value="all">All Status</option>
+                    <option value="Good">Good</option>
+                    <option value="Average">Average</option>
+                    <option value="At-Risk">At-Risk</option>
+                  </select>
+                </div>
+                <div class="overflow-x-auto scrollbar-thin max-h-[340px]">
+                  <table class="min-w-full text-xs">
+                    <thead class="sticky top-0 z-10 bg-slate-900/80 backdrop-blur">
+                      <tr class="text-slate-400 text-[11px]">
+                        <th class="text-left font-medium py-2 pr-3">Student</th>
+                        <th class="text-left font-medium py-2 px-3">Roll No</th>
+                        <th class="text-left font-medium py-2 px-3 w-40">Attendance</th>
+                        <th class="text-left font-medium py-2 px-3 w-40">Avg Marks</th>
+                        <th class="text-left font-medium py-2 px-3">Status</th>
+                      </tr>
+                    </thead>
+                    <tbody id="faculty-class-table" class="divide-y divide-slate-800/70">
+                      <!-- Rows injected by JS -->
+                    </tbody>
+                  </table>
+                </div>
+            </div>
+          </section>
+
+          <!-- Faculty Marks Upload -->
+          <section
+            data-view="faculty-marks"
+            class="hidden flex-col gap-6 animate-fade-in"
+          >
+            <header class="flex items-center justify-between">
+              <div>
+                <div class="flex items-center gap-2 text-xs font-medium uppercase text-sky-300">
+                  <span class="inline-flex h-5 w-5 rounded-full bg-sky-500/10 items-center justify-center">
+                    <i class="fa-solid fa-file-pen text-[11px]"></i>
+                  </span>
+                  <span>Marks Upload</span>
+                </div>
+                <h1 class="mt-1 text-2xl font-semibold text-slate-50">
+                  Update Records
+                </h1>
+              </div>
+            </header>
+
+            <div class="glass-card rounded-2xl p-4 max-w-2xl">
+                  <div class="flex items-center justify-between">
+                    <div>
+                      <p class="text-xs text-slate-400 uppercase tracking-[0.18em]">
+                        Marks Upload
+                      </p>
+                      <h2 class="text-sm font-semibold text-slate-100 mt-1">
+                        Attendance & internal marks
+                      </h2>
+                    </div>
+                    <div
+                      class="h-9 w-9 rounded-xl bg-emerald-500/20 text-emerald-300 flex items-center justify-center"
+                    >
+                      <i class="fa-solid fa-file-pen"></i>
+                    </div>
+                  </div>
+                  <form id="marks-form" class="space-y-3 text-xs">
+                    <div class="space-y-1">
+                      <label class="text-slate-300">Student</label>
+                      <select
+                        id="marks-student-select"
+                        class="w-full rounded-xl bg-slate-900/60 border border-slate-700/80 px-3 py-2 text-xs focus:outline-none focus:ring-1 focus:ring-emerald-400"
+                        required
+                      ></select>
+                    </div>
+                    <div class="space-y-1">
+                      <label class="text-slate-300">Subject Code</label>
+                      <input
+                        id="marks-subject"
+                        type="text"
+                        placeholder="e.g., CS101"
+                        class="w-full rounded-xl bg-slate-900/60 border border-slate-700/80 px-3 py-2 text-xs focus:outline-none focus:ring-1 focus:ring-emerald-400"
+                        required
+                      />
+                    </div>
+                    <div class="grid grid-cols-2 gap-3">
+                      <div class="space-y-1">
+                        <label class="text-slate-300">Total Classes</label>
+                        <input
+                          id="marks-total"
+                          type="number"
+                          min="1"
+                          max="60"
+                          class="w-full rounded-xl bg-slate-900/60 border border-slate-700/80 px-3 py-2 text-xs focus:outline-none focus:ring-1 focus:ring-emerald-400"
+                          required
+                        />
+                      </div>
+                      <div class="space-y-1">
+                        <label class="text-slate-300">Attended</label>
+                        <input
+                          id="marks-attended"
+                          type="number"
+                          min="0"
+                          max="60"
+                          class="w-full rounded-xl bg-slate-900/60 border border-slate-700/80 px-3 py-2 text-xs focus:outline-none focus:ring-1 focus:ring-emerald-400"
+                          required
+                        />
+                      </div>
+                    </div>
+                    <div class="space-y-1">
+                      <label class="text-slate-300">Internal Marks (0-100)</label>
+                      <input
+                        id="marks-marks"
+                        type="number"
+                        min="0"
+                        max="100"
+                        class="w-full rounded-xl bg-slate-900/60 border border-slate-700/80 px-3 py-2 text-xs focus:outline-none focus:ring-1 focus:ring-emerald-400"
+                        required
+                      />
+                    </div>
+                    <button
+                      type="submit"
+                      class="w-full inline-flex items-center justify-center gap-2 px-3 py-2.5 rounded-xl bg-gradient-to-r from-emerald-500 to-teal-500 text-slate-950 text-xs font-semibold shadow-lg shadow-emerald-500/30 hover:shadow-emerald-400/50 transition"
+                    >
+                      <i class="fa-solid fa-cloud-arrow-up text-[11px]"></i>
+                      <span>Save Record</span>
+                    </button>
+                  </form>
+            </div>
+          </section>
+
+          <!-- Faculty Notices -->
+          <section
+            data-view="faculty-notices"
+            class="hidden flex-col gap-6 animate-fade-in"
+          >
+            <header class="flex items-center justify-between">
+              <div>
+                <div class="flex items-center gap-2 text-xs font-medium uppercase text-violet-300">
+                  <span class="inline-flex h-5 w-5 rounded-full bg-violet-500/10 items-center justify-center">
+                    <i class="fa-solid fa-bullhorn text-[11px]"></i>
+                  </span>
+                  <span>Notices</span>
+                </div>
+                <h1 class="mt-1 text-2xl font-semibold text-slate-50">
+                  Announcements & AI Drafts
+                </h1>
+              </div>
+            </header>
+
+            <div class="grid grid-cols-1 lg:grid-cols-2 gap-6">
+                <!-- AI Notice Board -->
+                <div class="glass-card rounded-2xl p-4 space-y-3 h-fit">
+                  <div class="flex items-center justify-between">
+                    <div>
+                      <p class="text-xs text-slate-400 uppercase tracking-[0.18em]">
+                        AI Notice Board
+                      </p>
+                      <h2 class="text-sm font-semibold text-slate-100 mt-1">
+                        Draft formal notices in seconds
+                      </h2>
+                    </div>
+                    <div
+                      class="h-9 w-9 rounded-xl bg-violet-500/20 text-violet-300 flex items-center justify-center"
+                    >
+                      <i class="fa-solid fa-wand-magic-sparkles"></i>
+                    </div>
+                  </div>
+                  <div class="space-y-2 text-xs">
+                    <label class="text-slate-300">Topic</label>
+                    <input
+                      id="notice-topic"
+                      type="text"
+                      placeholder="e.g., Mid-semester holiday, Extra class..."
+                      class="w-full rounded-xl bg-slate-900/60 border border-slate-700/80 px-3 py-2 text-xs focus:outline-none focus:ring-1 focus:ring-violet-400"
+                    />
+                  </div>
+                  <div class="flex gap-2">
+                    <button
+                      id="btn-draft-notice"
+                      class="flex-1 inline-flex items-center justify-center gap-2 px-3 py-2 rounded-xl bg-gradient-to-r from-violet-500 to-indigo-500 text-slate-50 text-xs font-semibold shadow-lg shadow-violet-500/30 hover:shadow-violet-400/50 transition"
+                    >
+                      <i class="fa-solid fa-magic-wand-sparkles text-[11px]"></i>
+                      <span>Draft with AI</span>
+                    </button>
+                    <button
+                      id="btn-publish-notice"
+                      class="inline-flex items-center justify-center gap-2 px-3 py-2 rounded-xl bg-slate-900/70 text-slate-200 text-[11px] border border-slate-700/70 hover:border-emerald-400/70 transition"
+                    >
+                      <i class="fa-solid fa-paper-plane"></i>
+                      <span>Publish</span>
+                    </button>
+                  </div>
+                  <div
+                    id="notice-output"
+                    class="mt-1 text-xs text-slate-300 max-h-48 overflow-y-auto scrollbar-thin prose prose-invert prose-sm prose-slate"
+                  >
+                    <p class="text-slate-400">
+                      Type a short topic and click
+                      <span class="font-semibold text-violet-300">“Draft with AI”</span>
+                      to generate a formal notice around 100 words.
+                    </p>
+                  </div>
+                </div>
+
+            <!-- Faculty Notifications List -->
+            <div class="glass-card rounded-2xl p-4 h-fit">
+              <div class="flex items-center justify-between mb-2">
+                <div>
+                  <p class="text-xs text-slate-400 uppercase tracking-[0.18em]">
+                    Notifications
+                  </p>
+                  <h2 class="text-sm font-semibold text-slate-100 mt-1">
+                    System-wide announcements
+                  </h2>
+                </div>
+                <div
+                  class="h-9 w-9 rounded-xl bg-amber-500/20 text-amber-300 flex items-center justify-center"
+                >
+                  <i class="fa-solid fa-bell"></i>
+                </div>
+              </div>
+              <div
+                id="faculty-notifications"
+                class="mt-1 text-xs text-slate-300 max-h-60 overflow-y-auto space-y-2 scrollbar-thin"
+              >
+                <!-- Notices injected -->
+              </div>
+            </div>
+            </div>
+          </section>
+
+          <!-- Admin Dashboard -->
+          <section
+            data-view="admin-dashboard"
+            class="hidden flex-col gap-6 animate-fade-in"
+          >
+            <header class="flex flex-col md:flex-row md:items-center md:justify-between gap-4">
+              <div>
+                <div class="flex items-center gap-2 text-xs font-medium uppercase text-rose-300">
+                  <span class="inline-flex h-5 w-5 rounded-full bg-rose-500/10 items-center justify-center">
+                    <i class="fa-solid fa-shield-halved text-[11px]"></i>
+                  </span>
+                  <span>Admin Console</span>
+                </div>
+                <h1 class="mt-1 text-2xl md:text-3xl font-semibold text-slate-50">
+                  System health & governance
+                </h1>
+                <p class="mt-1 text-sm text-slate-400 max-w-xl">
+                  Monitor users, performance distribution, and system-wide announcements.
+                </p>
+              </div>
+            </header>
+
+            <!-- Admin Top Stats -->
+            <div class="grid grid-cols-1 md:grid-cols-3 gap-4 mt-2">
+              <div class="glass-card rounded-2xl p-4 border border-sky-500/30">
+                <div class="flex items-center justify-between">
+                  <div>
+                    <p class="text-xs text-slate-400 uppercase tracking-wide">
+                      Total Users
+                    </p>
+                    <p id="admin-total-users" class="text-2xl font-semibold mt-1">0</p>
+                  </div>
+                  <div
+                    class="h-10 w-10 rounded-xl bg-sky-500/15 text-sky-300 flex items-center justify-center"
+                  >
+                    <i class="fa-solid fa-users"></i>
+                  </div>
+                </div>
+              </div>
+
+              <div class="glass-card rounded-2xl p-4 border border-emerald-500/30">
+                <div class="flex items-center justify-between">
+                  <div>
+                    <p class="text-xs text-slate-400 uppercase tracking-wide">
+                      Total Students
+                    </p>
+                    <p id="admin-total-students" class="text-2xl font-semibold mt-1">
+                      0
+                    </p>
+                  </div>
+                  <div
+                    class="h-10 w-10 rounded-xl bg-emerald-500/15 text-emerald-300 flex items-center justify-center"
+                  >
+                    <i class="fa-solid fa-user-graduate"></i>
+                  </div>
+                </div>
+              </div>
+
+              <div class="glass-card rounded-2xl p-4 border border-rose-500/30">
+                <div class="flex items-center justify-between">
+                  <div>
+                    <p class="text-xs text-slate-400 uppercase tracking-wide">
+                      At-Risk Count
+                    </p>
+                    <p id="admin-at-risk-count" class="text-2xl font-semibold mt-1">
+                      0
+                    </p>
+                  </div>
+                  <div
+                    class="h-10 w-10 rounded-xl bg-rose-500/15 text-rose-300 flex items-center justify-center"
+                  >
+                    <i class="fa-solid fa-triangle-exclamation"></i>
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            <!-- System Maintenance (Backup/Restore) -->
+            <div class="glass-card rounded-2xl p-4 mt-4 flex flex-col md:flex-row md:items-center justify-between gap-4">
+              <div>
+                <p class="text-xs text-slate-400 uppercase tracking-[0.16em]">System Maintenance</p>
+                <h2 class="text-sm font-semibold text-slate-100 mt-1">Data Backup & Recovery</h2>
+              </div>
+              <div class="flex gap-3">
+                <button id="btn-backup-data" class="flex items-center gap-2 px-4 py-2 rounded-xl bg-sky-500/10 text-sky-300 border border-sky-500/30 hover:bg-sky-500/20 transition text-xs">
+                  <i class="fa-solid fa-download"></i> Backup Data
+                </button>
+                <button id="btn-restore-data" class="flex items-center gap-2 px-4 py-2 rounded-xl bg-rose-500/10 text-rose-300 border border-rose-500/30 hover:bg-rose-500/20 transition text-xs">
+                  <i class="fa-solid fa-upload"></i> Restore Data
+                </button>
+                <input type="file" id="restore-file-input" class="hidden" accept=".json">
+              </div>
+            </div>
+
+              <!-- Chart + Users -->
+            <div class="grid grid-cols-1 lg:grid-cols-3 gap-6 items-start mt-4">
+              <!-- Performance Chart -->
+              <div class="glass-card rounded-2xl p-4 lg:col-span-1">
+                <div class="flex items-center justify-between mb-3">
+                  <div>
+                    <p class="text-xs text-slate-400 uppercase tracking-[0.16em]">
+                      Performance Distribution
+                    </p>
+                    <h2 class="text-sm font-semibold text-slate-100 mt-1">
+                      Good vs Average vs At-Risk
+                    </h2>
+                  </div>
+                  <div class="flex items-center gap-1">
+                    <button
+                      id="chart-type-toggle"
+                      class="h-7 w-7 rounded-lg bg-slate-800/80 hover:bg-slate-700 text-slate-300 text-[10px] flex items-center justify-center transition"
+                      title="Switch Chart Type"
+                    >
+                      <i class="fa-solid fa-chart-pie"></i>
+                    </button>
+                    <div
+                      class="h-9 w-9 rounded-xl bg-indigo-500/20 text-indigo-300 flex items-center justify-center"
+                    >
+                      <i class="fa-solid fa-chart-column"></i>
+                    </div>
+                  </div>
+                </div>
+                <div class="relative h-60">
+                  <canvas id="admin-category-chart"></canvas>
+                </div>
+              </div>
+
+              <!-- Users list -->
+              <div class="glass-card rounded-2xl p-4 lg:col-span-2">
+                <div class="flex items-center justify-between mb-3">
+                  <div>
+                    <p class="text-xs text-slate-400 uppercase tracking-[0.16em]">
+                      User Management
+                    </p>
+                    <h2 class="text-sm font-semibold text-slate-100 mt-1">
+                      Registered users and roles
+                    </h2>
+                  </div>
+                  <div class="flex items-center gap-1">
+                    <button
+                      id="btn-view-leaderboard"
+                      class="h-7 w-7 rounded-lg bg-slate-800/80 hover:bg-slate-700 text-slate-300 text-[10px] flex items-center justify-center transition"
+                      title="View Leaderboard"
+                    >
+                      <i class="fa-solid fa-trophy"></i>
+                    </button>
+                    <div
+                      class="h-9 w-9 rounded-xl bg-slate-900/80 text-slate-300 flex items-center justify-center"
+                    >
+                      <i class="fa-solid fa-database"></i>
+                    </div>
+                  </div>
+                </div>
+                <div class="mb-2">
+                  <input
+                    id="admin-user-search"
+                    type="text"
+                    placeholder="Search users..."
+                    class="text-xs px-2 py-1 rounded-lg bg-slate-900/60 border border-slate-700/80 focus:outline-none focus:ring-1 focus:ring-emerald-400 w-full"
+                  />
+                </div>
+                <div class="overflow-x-auto scrollbar-thin max-h-[320px]">
+                  <table class="min-w-full text-xs">
+                    <thead class="sticky top-0 z-10 bg-slate-900/80 backdrop-blur">
+                      <tr class="text-slate-400 text-[11px]">
+                        <th class="text-left font-medium py-2 pr-3">Name</th>
+                        <th class="text-left font-medium py-2 px-3">Username</th>
+                        <th class="text-left font-medium py-2 px-3">Role</th>
+                        <th class="text-left font-medium py-2 px-3">Roll / Branch</th>
+                        <th class="text-left font-medium py-2 px-3">Semester</th>
+                      </tr>
+                    </thead>
+                    <tbody id="admin-users-table" class="divide-y divide-slate-800/70">
+                      <!-- Rows injected -->
+                    </tbody>
+                  </table>
+                </div>
+              </div>
+            </div>
+
+            <!-- Announcements -->
+            <div class="grid grid-cols-1 lg:grid-cols-3 gap-6 items-start mt-4">
+              <!-- New announcement -->
+              <div class="glass-card rounded-2xl p-4 lg:col-span-1 space-y-3">
+                <div class="flex items-center justify-between mb-1">
+                  <div>
+                    <p class="text-xs text-slate-400 uppercase tracking-[0.18em]">
+                      Announcements
+                    </p>
+                    <h2 class="text-sm font-semibold text-slate-100 mt-1">
+                      Post a system-wide notice
+                    </h2>
+                  </div>
+                  <div
+                    class="h-9 w-9 rounded-xl bg-amber-500/20 text-amber-300 flex items-center justify-center"
+                  >
+                    <i class="fa-solid fa-bullhorn"></i>
+                  </div>
+                </div>
+                <form id="admin-announcement-form" class="space-y-2 text-xs">
+                  <div class="space-y-1">
+                    <label class="text-slate-300">Title</label>
+                    <input
+                      id="admin-ann-title"
+                      type="text"
+                      class="w-full rounded-xl bg-slate-900/60 border border-slate-700/80 px-3 py-2 text-xs focus:outline-none focus:ring-1 focus:ring-amber-400"
+                      required
+                    />
+                  </div>
+                  <div class="space-y-1">
+                    <label class="text-slate-300">Message</label>
+                    <textarea
+                      id="admin-ann-msg"
+                      rows="4"
+                      class="w-full rounded-xl bg-slate-900/60 border border-slate-700/80 px-3 py-2 text-xs focus:outline-none focus:ring-1 focus:ring-amber-400 resize-none"
+                      required
+                    ></textarea>
+                  </div>
+                  <div class="space-y-1">
+                    <label class="text-slate-300">Date</label>
+                    <input
+                      id="admin-ann-date"
+                      type="date"
+                      class="w-full rounded-xl bg-slate-900/60 border border-slate-700/80 px-3 py-2 text-xs focus:outline-none focus:ring-1 focus:ring-amber-400"
+                    />
+                  </div>
+                  <button
+                    type="submit"
+                    class="w-full inline-flex items-center justify-center gap-2 px-3 py-2.5 rounded-xl bg-gradient-to-r from-amber-400 to-orange-500 text-slate-950 text-xs font-semibold shadow-lg shadow-amber-500/30 hover:shadow-amber-400/50 transition"
+                  >
+                    <i class="fa-solid fa-paper-plane text-[11px]"></i>
+                    <span>Post Announcement</span>
+                  </button>
+                </form>
+              </div>
+
+              <!-- Announcement list -->
+              <div class="glass-card rounded-2xl p-4 lg:col-span-2">
+                <div class="flex items-center justify-between mb-2">
+                  <div>
+                    <p class="text-xs text-slate-400 uppercase tracking-[0.18em]">
+                      Recent Announcements
+                    </p>
+                    <h2 class="text-sm font-semibold text-slate-100 mt-1">
+                      Visible to all roles
+                    </h2>
+                  </div>
+                </div>
+                <div
+                  id="admin-announcements-list"
+                  class="mt-1 text-xs text-slate-300 max-h-72 overflow-y-auto space-y-2 scrollbar-thin"
+                >
+                  <!-- Announcements injected -->
+                </div>
+              </div>
+            </div>
+          </section>
+
+          <!-- Admin Users View -->
+          <section data-view="admin-users" class="hidden flex-col gap-6 animate-fade-in">
+            <header class="flex items-center justify-between">
+              <div>
+                <div class="flex items-center gap-2 text-xs font-medium uppercase text-emerald-300">
+                  <span class="inline-flex h-5 w-5 rounded-full bg-emerald-500/10 items-center justify-center">
+                    <i class="fa-solid fa-users text-[11px]"></i>
+                  </span>
+                  <span>User Management</span>
+                </div>
+                <h1 class="mt-1 text-2xl font-semibold text-slate-50">Registered Users</h1>
+              </div>
+            </header>
+            <div class="glass-card rounded-2xl p-4">
+              <div class="mb-2">
+                <input id="admin-user-search-view" type="text" placeholder="Search users..." class="text-xs px-2 py-1 rounded-lg bg-slate-900/60 border border-slate-700/80 focus:outline-none focus:ring-1 focus:ring-emerald-400 w-full" />
+              </div>
+              <div class="overflow-x-auto scrollbar-thin max-h-[500px]">
+                <table class="min-w-full text-xs">
+                  <thead class="sticky top-0 z-10 bg-slate-900/80 backdrop-blur">
+                    <tr class="text-slate-400 text-[11px]">
+                      <th class="text-left font-medium py-2 pr-3">Name</th>
+                      <th class="text-left font-medium py-2 px-3">Username</th>
+                      <th class="text-left font-medium py-2 px-3">Role</th>
+                      <th class="text-left font-medium py-2 px-3">Roll / Branch</th>
+                      <th class="text-left font-medium py-2 px-3">Semester</th>
+                    </tr>
+                  </thead>
+                  <tbody id="admin-users-table-view" class="divide-y divide-slate-800/70"></tbody>
+                </table>
+              </div>
+            </div>
+          </section>
+
+          <!-- Admin Analytics View -->
+          <section data-view="admin-analytics" class="hidden flex-col gap-6 animate-fade-in">
+            <header class="flex items-center justify-between">
+              <div>
+                <div class="flex items-center gap-2 text-xs font-medium uppercase text-indigo-300">
+                  <span class="inline-flex h-5 w-5 rounded-full bg-indigo-500/10 items-center justify-center">
+                    <i class="fa-solid fa-chart-pie text-[11px]"></i>
+                  </span>
+                  <span>System Analytics</span>
+                </div>
+                <h1 class="mt-1 text-2xl font-semibold text-slate-50">Performance Distribution</h1>
+              </div>
+            </header>
+            <div class="glass-card rounded-2xl p-4">
+              <div class="relative h-[500px]">
+                <canvas id="admin-analytics-chart-view"></canvas>
+              </div>
+            </div>
+          </section>
+
+          <!-- Admin Announcements View -->
+          <section data-view="admin-announcements" class="hidden flex-col gap-6 animate-fade-in">
+            <header class="flex items-center justify-between">
+              <div>
+                <div class="flex items-center gap-2 text-xs font-medium uppercase text-amber-300">
+                  <span class="inline-flex h-5 w-5 rounded-full bg-amber-500/10 items-center justify-center">
+                    <i class="fa-solid fa-bullhorn text-[11px]"></i>
+                  </span>
+                  <span>Announcements</span>
+                </div>
+                <h1 class="mt-1 text-2xl font-semibold text-slate-50">System-wide Notices</h1>
+              </div>
+            </header>
+            <div class="grid grid-cols-1 lg:grid-cols-3 gap-6 items-start">
+              <div class="glass-card rounded-2xl p-4 lg:col-span-1 space-y-3">
+                <h2 class="text-sm font-semibold text-slate-100">Post New Notice</h2>
+                <form id="admin-announcement-form-view" class="space-y-2 text-xs">
+                  <div class="space-y-1">
+                    <label class="text-slate-300">Title</label>
+                    <input id="admin-ann-title-view" type="text" class="w-full rounded-xl bg-slate-900/60 border border-slate-700/80 px-3 py-2 text-xs focus:outline-none focus:ring-1 focus:ring-amber-400" required />
+                  </div>
+                  <div class="space-y-1">
+                    <label class="text-slate-300">Message</label>
+                    <textarea id="admin-ann-msg-view" rows="4" class="w-full rounded-xl bg-slate-900/60 border border-slate-700/80 px-3 py-2 text-xs focus:outline-none focus:ring-1 focus:ring-amber-400 resize-none" required></textarea>
+                  </div>
+                  <div class="space-y-1">
+                    <label class="text-slate-300">Date</label>
+                    <input id="admin-ann-date-view" type="date" class="w-full rounded-xl bg-slate-900/60 border border-slate-700/80 px-3 py-2 text-xs focus:outline-none focus:ring-1 focus:ring-amber-400" />
+                  </div>
+                  <button type="submit" class="w-full inline-flex items-center justify-center gap-2 px-3 py-2.5 rounded-xl bg-gradient-to-r from-amber-400 to-orange-500 text-slate-950 text-xs font-semibold shadow-lg shadow-amber-500/30 hover:shadow-amber-400/50 transition">
+                    <i class="fa-solid fa-paper-plane text-[11px]"></i>
+                    <span>Post Announcement</span>
+                  </button>
+                </form>
+              </div>
+              <div class="glass-card rounded-2xl p-4 lg:col-span-2">
+                <h2 class="text-sm font-semibold text-slate-100 mb-2">Recent Announcements</h2>
+                <div id="admin-announcements-list-view" class="mt-1 text-xs text-slate-300 max-h-[500px] overflow-y-auto space-y-2 scrollbar-thin"></div>
+              </div>
+            </div>
+          </section>
+
+          <!-- Notifications View (shared) -->
+          <section
+            data-view="notifications-view"
+            class="hidden flex-col gap-4 animate-fade-in"
+          >
+            <header class="flex items-center justify-between">
+              <div>
+                <div class="flex items-center gap-2 text-xs font-medium uppercase text-amber-300">
+                  <span class="inline-flex h-5 w-5 rounded-full bg-amber-500/10 items-center justify-center">
+                    <i class="fa-solid fa-bell text-[11px]"></i>
+                  </span>
+                  <span>Notifications</span>
+                </div>
+                <h1 class="mt-1 text-2xl font-semibold text-slate-50">
+                  All recent notices
+                </h1>
+              </div>
+              <button
+                id="btn-back-from-notifications"
+                class="inline-flex items-center gap-2 px-3 py-2 rounded-xl bg-slate-900/70 border border-slate-700/70 text-xs text-slate-200 hover:border-emerald-400/70 transition"
+              >
+                <i class="fa-solid fa-arrow-left"></i>
+                <span>Back</span>
+              </button>
+            </header>
+            <div
+              id="notifications-view-list"
+              class="glass-card rounded-2xl p-4 text-xs text-slate-300 max-h-[520px] overflow-y-auto space-y-2 scrollbar-thin mt-2"
+            >
+              <!-- Notices injected -->
+            </div>
+          </section>
+
+          <!-- Student Analytics View (Trends) -->
+          <section
+            data-view="student-analytics"
+            class="hidden flex-col gap-6 animate-fade-in"
+          >
+            <header class="flex items-center justify-between">
+              <div>
+                <div class="flex items-center gap-2 text-xs font-medium uppercase text-indigo-300">
+                  <span class="inline-flex h-5 w-5 rounded-full bg-indigo-500/10 items-center justify-center">
+                    <i class="fa-solid fa-chart-line text-[11px]"></i>
+                  </span>
+                  <span>Performance Trends</span>
+                </div>
+                <h1 class="mt-1 text-2xl font-semibold text-slate-50">
+                  Historical Performance Analysis
+                </h1>
+              </div>
+              <button
+                id="btn-back-from-trends"
+                class="inline-flex items-center gap-2 px-3 py-2 rounded-xl bg-slate-900/70 border border-slate-700/70 text-xs text-slate-200 hover:border-emerald-400/70 transition"
+              >
+                <i class="fa-solid fa-arrow-left"></i>
+                <span>Back</span>
+              </button>
+            </header>
+            <div class="glass-card rounded-2xl p-4">
+              <div class="flex items-center justify-end gap-2 mb-4">
+                <span class="text-xs text-slate-400 mr-2">Filter:</span>
+                <button id="filter-all" class="px-3 py-1.5 text-xs font-medium rounded-lg bg-indigo-500 text-white transition hover:bg-indigo-600 shadow-lg shadow-indigo-500/30">All</button>
+                <button id="filter-theory" class="px-3 py-1.5 text-xs font-medium rounded-lg bg-slate-800 text-slate-300 border border-slate-700 transition hover:bg-slate-700">Theory</button>
+                <button id="filter-lab" class="px-3 py-1.5 text-xs font-medium rounded-lg bg-slate-800 text-slate-300 border border-slate-700 transition hover:bg-slate-700">Lab</button>
+              </div>
+              <div class="relative h-[700px]">
+                <canvas id="trends-chart"></canvas>
+              </div>
+            </div>
+          </section>
+
+          <!-- Leaderboard View -->
+          <section
+            data-view="leaderboard-view"
+            class="hidden flex-col gap-6 animate-fade-in"
+          >
+            <header class="flex items-center justify-between">
+              <div>
+                <div class="flex items-center gap-2 text-xs font-medium uppercase text-amber-300">
+                  <span class="inline-flex h-5 w-5 rounded-full bg-amber-500/10 items-center justify-center">
+                    <i class="fa-solid fa-trophy text-[11px]"></i>
+                  </span>
+                  <span>Leaderboard</span>
+                </div>
+                <h1 class="mt-1 text-2xl font-semibold text-slate-50">
+                  Top Performers
+                </h1>
+              </div>
+              <button
+                id="btn-back-from-leaderboard"
+                class="inline-flex items-center gap-2 px-3 py-2 rounded-xl bg-slate-900/70 border border-slate-700/70 text-xs text-slate-200 hover:border-emerald-400/70 transition"
+              >
+                <i class="fa-solid fa-arrow-left"></i>
+                <span>Back</span>
+              </button>
+            </header>
+            <div id="leaderboard-list" class="glass-card rounded-2xl p-4 space-y-2">
+              <!-- Leaderboard injected by JS -->
+            </div>
+          </section>
+        </main>
+      </div>
+    </div>
+
+    <!-- AI Chat Assistant (Floating) -->
+    <div
+      id="ai-chat-widget"
+      class="fixed bottom-6 right-6 z-50 hidden flex-col gap-3"
+    >
+      <div
+        id="ai-chat-window"
+        class="glass-card rounded-2xl p-4 w-80 h-96 flex flex-col shadow-2xl border border-violet-500/30 hidden"
+      >
+        <div class="flex items-center justify-between mb-3 pb-2 border-b border-slate-800">
+          <div class="flex items-center gap-2">
+            <div class="h-8 w-8 rounded-xl bg-gradient-to-tr from-violet-500 to-indigo-500 flex items-center justify-center">
+              <i class="fa-solid fa-robot text-xs"></i>
+            </div>
+            <div>
+              <p class="text-xs font-semibold text-slate-100">AI Assistant</p>
+              <p class="text-[10px] text-slate-400">Always here to help</p>
+            </div>
+          </div>
+          <button
+            id="ai-chat-close"
+            class="h-6 w-6 rounded-lg bg-slate-800/80 hover:bg-slate-700 text-slate-400 flex items-center justify-center transition"
+          >
+            <i class="fa-solid fa-times text-[10px]"></i>
+          </button>
+        </div>
+        <div
+          id="ai-chat-messages"
+          class="flex-1 overflow-y-auto scrollbar-thin space-y-2 text-xs text-slate-300 mb-3"
+        >
+          <div class="flex items-start gap-2">
+            <div class="h-6 w-6 rounded-lg bg-violet-500/20 flex items-center justify-center shrink-0">
+              <i class="fa-solid fa-robot text-[10px] text-violet-300"></i>
+            </div>
+            <div class="bg-slate-900/60 rounded-lg px-2.5 py-1.5">
+              <p>Hello! I'm your AI assistant. Ask me anything about your performance, study tips, or academic guidance.</p>
+            </div>
+          </div>
+        </div>
+        <div class="flex items-center gap-2">
+          <input
+            id="ai-chat-input"
+            type="text"
+            placeholder="Type your question..."
+            class="flex-1 text-xs px-3 py-2 rounded-xl bg-slate-900/60 border border-slate-700/80 focus:outline-none focus:ring-1 focus:ring-violet-400"
+          />
+          <button
+            id="ai-chat-send"
+            class="h-8 w-8 rounded-xl bg-gradient-to-r from-violet-500 to-indigo-500 text-white flex items-center justify-center hover:from-violet-600 hover:to-indigo-600 transition"
+          >
+            <i class="fa-solid fa-paper-plane text-[10px]"></i>
+          </button>
+        </div>
+      </div>
+      <button
+        id="ai-chat-button"
+        class="h-14 w-14 rounded-2xl bg-gradient-to-tr from-violet-500 via-indigo-500 to-purple-500 shadow-lg shadow-violet-500/50 flex items-center justify-center text-white hover:scale-110 transition animate-float"
+      >
+        <i class="fa-solid fa-robot text-xl"></i>
+        <span
+          id="ai-chat-indicator"
+          class="absolute top-0 right-0 h-3 w-3 rounded-full bg-emerald-400 border-2 border-slate-900 animate-pulse"
+        ></span>
+      </button>
+    </div>
+
+    <!-- Bulk Upload Modal -->
+    <div
+      id="bulk-upload-modal"
+      class="fixed inset-0 z-50 hidden items-center justify-center bg-black/60 backdrop-blur-sm"
+    >
+      <div class="glass-card rounded-2xl p-6 w-full max-w-2xl m-4 max-h-[90vh] overflow-y-auto scrollbar-thin">
+        <div class="flex items-center justify-between mb-4">
+          <div>
+            <p class="text-xs text-slate-400 uppercase tracking-[0.16em]">Bulk Upload</p>
+            <h2 class="text-sm font-semibold text-slate-100 mt-1">Upload Multiple Records</h2>
+          </div>
+          <button
+            id="bulk-upload-close"
+            class="h-8 w-8 rounded-lg bg-slate-800/80 hover:bg-slate-700 text-slate-400 flex items-center justify-center transition"
+          >
+            <i class="fa-solid fa-times"></i>
+          </button>
+        </div>
+        <div class="space-y-3 text-xs">
+          <div>
+            <label class="text-slate-300 mb-2 block">CSV Format: StudentID,SubjectCode,Total,Attended,Marks</label>
+            <textarea
+              id="bulk-csv-input"
+              rows="10"
+              placeholder="24CSE001,CS101,40,32,85&#10;24CSE002,CS101,40,30,78&#10;..."
+              class="w-full rounded-xl bg-slate-900/60 border border-slate-700/80 px-3 py-2 text-xs font-mono focus:outline-none focus:ring-1 focus:ring-emerald-400 resize-none"
+            ></textarea>
+          </div>
+          <div class="flex items-center gap-2">
+            <button
+              id="bulk-upload-submit"
+              class="flex-1 inline-flex items-center justify-center gap-2 px-3 py-2.5 rounded-xl bg-gradient-to-r from-emerald-500 to-teal-500 text-slate-950 text-xs font-semibold shadow-lg shadow-emerald-500/30 hover:shadow-emerald-400/50 transition"
+            >
+              <i class="fa-solid fa-cloud-arrow-up"></i>
+              <span>Upload Records</span>
+            </button>
+            <button
+              id="bulk-download-template"
+              class="inline-flex items-center justify-center gap-2 px-3 py-2 rounded-xl bg-slate-800/80 text-slate-200 text-xs hover:bg-slate-700 transition"
+            >
+              <i class="fa-solid fa-download"></i>
+              <span>Template</span>
+            </button>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Goal Setting Modal -->
+    <div id="goal-modal" class="fixed inset-0 z-50 hidden items-center justify-center bg-black/60 backdrop-blur-sm animate-fade-in">
+      <div class="glass-card rounded-2xl p-6 w-full max-w-sm m-4 border border-slate-700">
+        <div class="flex items-center justify-between mb-4">
+          <h3 class="text-lg font-semibold text-slate-100">Set Academic Goals</h3>
+          <button id="goal-modal-close" class="text-slate-400 hover:text-slate-200"><i class="fa-solid fa-times"></i></button>
+        </div>
+        <form id="goal-form" class="space-y-4">
+          <div>
+            <label class="text-xs text-slate-400 uppercase tracking-wider block mb-1">Target Attendance (%)</label>
+            <input type="number" id="input-goal-attendance" min="0" max="100" class="w-full rounded-xl bg-slate-900/60 border border-slate-700/80 px-3 py-2 text-sm text-slate-100 focus:outline-none focus:ring-1 focus:ring-emerald-400" placeholder="e.g. 85">
+          </div>
+          <div>
+            <label class="text-xs text-slate-400 uppercase tracking-wider block mb-1">Target Avg Marks</label>
+            <input type="number" id="input-goal-marks" min="0" max="100" class="w-full rounded-xl bg-slate-900/60 border border-slate-700/80 px-3 py-2 text-sm text-slate-100 focus:outline-none focus:ring-1 focus:ring-sky-400" placeholder="e.g. 75">
+          </div>
+          <button type="submit" class="w-full py-2.5 rounded-xl bg-gradient-to-r from-emerald-500 to-teal-500 text-slate-950 font-semibold text-xs shadow-lg shadow-emerald-500/20 hover:shadow-emerald-500/40 transition mt-2">Save Goals</button>
+        </form>
+      </div>
+    </div>
+
+    <!-- Login Screen -->
+    <div
+      id="login-view"
+      class="hidden min-h-screen flex items-center justify-center px-4 py-10 animate-fade-in"
+    >
+      <div
+        class="glass-card w-full max-w-md rounded-3xl p-6 md:p-8 border border-slate-800/80 relative overflow-hidden"
+      >
+        <div
+          class="absolute -right-10 -top-10 h-32 w-32 rounded-full bg-gradient-to-tr from-indigo-500 via-purple-500 to-emerald-400 opacity-60 blur-3xl"
+        ></div>
+        <div class="relative">
+          <div class="flex items-center gap-3 mb-4">
+            <div
+              class="h-11 w-11 rounded-2xl bg-gradient-to-tr from-indigo-500 via-purple-500 to-emerald-400 flex items-center justify-center animate-float"
+            >
+              <i class="fa-solid fa-chart-line text-lg text-slate-900"></i>
+            </div>
+            <div>
+              <p class="text-xs uppercase tracking-[0.3em] text-slate-400">
+                Adaptive
+              </p>
+              <h1 class="text-xl font-semibold text-slate-50">
+                Performance Tracker
+              </h1>
+            </div>
+          </div>
+          <p class="text-sm text-slate-400 mb-5">
+            Monitor attendance, internal marks, and identify
+            <span class="text-emerald-300 font-medium">Good</span>,
+            <span class="text-amber-300 font-medium">Average</span> and
+            <span class="text-rose-300 font-medium">At-Risk</span> learners in real time.
+          </p>
+
+          <form id="login-form" class="space-y-4">
+            <div class="space-y-1 text-sm">
+              <label for="username" class="text-slate-200">Username</label>
+              <div
+                class="flex items-center gap-2 rounded-2xl bg-slate-900/70 border border-slate-700/80 px-3 py-2 focus-within:ring-1 focus-within:ring-emerald-400"
+              >
+                <i class="fa-solid fa-user text-slate-500 text-xs"></i>
+                <input
+                  id="username"
+                  type="text"
+                  autocomplete="username"
+                  class="bg-transparent outline-none border-none text-sm flex-1 text-slate-100 placeholder:text-slate-500"
+                  placeholder="e.g., admin, faculty1, 24CSE001"
+                  required
+                />
+              </div>
+            </div>
+
+            <div class="space-y-1 text-sm">
+              <label for="password" class="text-slate-200">Password</label>
+              <div
+                class="flex items-center gap-2 rounded-2xl bg-slate-900/70 border border-slate-700/80 px-3 py-2 focus-within:ring-1 focus-within:ring-emerald-400"
+              >
+                <i class="fa-solid fa-lock text-slate-500 text-xs"></i>
+                <input
+                  id="password"
+                  type="password"
+                  autocomplete="current-password"
+                  class="bg-transparent outline-none border-none text-sm flex-1 text-slate-100 placeholder:text-slate-500"
+                  placeholder="password"
+                  required
+                />
+              </div>
+            </div>
+
+            <button
+              type="submit"
+              class="w-full mt-2 inline-flex items-center justify-center gap-2 rounded-2xl bg-gradient-to-r from-emerald-500 via-teal-400 to-cyan-500 text-slate-950 font-semibold text-sm py-2.5 shadow-lg shadow-emerald-500/30 hover:shadow-emerald-400/50 transition"
+            >
+              <span
+                id="login-spinner"
+                class="hidden h-4 w-4 rounded-full border-2 border-slate-900 border-t-transparent animate-spin-soft"
+              ></span>
+              <span>Sign in</span>
+            </button>
+
+            <p class="text-[11px] text-slate-500 mt-2 leading-relaxed">
+              Demo accounts are generated automatically on first launch.
+              <br />
+              Try:
+              <span class="text-slate-300 font-medium">admin / password</span>,
+              <span class="text-slate-300 font-medium">faculty1 / password</span>,
+              <span class="text-slate-300 font-medium">24CSEAIML063 / password</span>.
+            </p>
+          </form>
+        </div>
+      </div>
+    </div>
+
+    <script>
+      /**********************
+       * Mock "Database"
+       **********************/
+
+      const DB_KEY = "apt_db_v4";
+      const SESSION_KEY = "apt_session";
+
+      /**
+       * Load DB from localStorage or initialize with seed data.
+       */
+      function loadDB() {
+        try {
+          const raw = localStorage.getItem(DB_KEY);
+          if (raw) {
+            const parsed = JSON.parse(raw);
+            if (parsed && Array.isArray(parsed.users) && Array.isArray(parsed.records) && Array.isArray(parsed.notifications)) {
+              return parsed;
+            }
+          }
+        } catch (e) {
+          console.warn("Failed to parse DB, resetting.", e);
+        }
+        const seeded = seedDatabase();
+        saveDB(seeded);
+        return seeded;
+      }
+
+      function saveDB(db) {
+        localStorage.setItem(DB_KEY, JSON.stringify(db));
+      }
+
+      function seedDatabase() {
+        const users = [];
+        const records = [];
+        const notifications = [];
+
+        // Admin
+        users.push({
+          id: 1,
+          username: "admin",
+          password: "password",
+          role: "ADMIN",
+          fullName: "System Admin",
+        });
+
+        // Faculty
+        users.push({
+          id: 2,
+          username: "faculty1",
+          password: "password",
+          role: "FACULTY",
+          fullName: "Dr. Ananya Rao",
+          branch: "CSE-AIML",
+        });
+        users.push({
+          id: 3,
+          username: "faculty2",
+          password: "password",
+          role: "FACULTY",
+          fullName: "Prof. Raghav Menon",
+          branch: "CSE-AIML",
+        });
+
+        // Student data from input
+        const studentData = [
+          { roll: "24CSEAIML063", name: "GAWARA UDAY KUMAR" },
+          { roll: "24CSEAIML067", name: "AMIT KUMAR SAHU" },
+          { roll: "24CSEAIML071", name: "ASHISH PALO" },
+          { roll: "24CSEAIML075", name: "AKNITA PADHY" },
+          { roll: "24CSEAIML079", name: "AMAN KUMAR SINGH" },
+          { roll: "24CSEAIML083", name: "SUBHAM SWAGAT MOHAPATRA" },
+          { roll: "24CSEAIML087", name: "HRUSHIKESH PADHI" },
+          { roll: "24CSEAIML091", name: "NANDINI PANDA" },
+          { roll: "24CSEAIML095", name: "RAJKIRAN NAYAK" },
+          { roll: "24CSEAIML099", name: "RAHUL PRADHAN" },
+          { roll: "24CSEAIML104", name: "PREETAM PANDA" },
+          { roll: "24CSEAIML108", name: "DEBASHISH SAHOO" },
+          { roll: "24CSEAIML112", name: "BINAYAK KUMAR TRIPATHY" },
+          { roll: "24CSEAIML116", name: "OM PRAKASH BHOI" },
+          { roll: "24CSEAIML120", name: "M RITIK KOUSHIK" },
+          { roll: "24CSEAIML124", name: "LAGNESH ACHARYA" },
+          { roll: "24CSEAIML128", name: "SUBRAT PANIGRAHI" },
+          { roll: "24CSEAIML132", name: "ANSHU PRADHAN" },
+          { roll: "24CSEAIML136", name: "HARSH KUMAR SINHA" },
+          { roll: "24CSEAIML140", name: "NITIN SENAPATI" },
+          { roll: "24CSEAIML144", name: "SAMBIT NAYAK" },
+          { roll: "24CSEAIML149", name: "ASHUTOSH SABAT" },
+          { roll: "24CSEAIML153", name: "SWAYAMSAGAR JENA" },
+          { roll: "24CSEAIML157", name: "SUJIT KUMAR SAHOO" },
+          { roll: "24CSEAIML161", name: "SRIMAYA KUMAR PRADHAN" },
+          { roll: "24CSEAIML165", name: "TULIKA PRIYADARSHINI" },
+          { roll: "24CSEAIML169", name: "PUPPALA HARISH" },
+          { roll: "24CSEAIML173", name: "KALYANI ACHARYA" },
+          { roll: "24CSEAIML189", name: "ABHISHEK ROUT" },
+          { roll: "24CSEAIML193", name: "SWADHIN PANDA" },
+          { roll: "24CSEAIML197", name: "SUBHSHREE PANDA" },
+          { roll: "24CSEAIML201", name: "NITIN PRASAD SINGH" },
+          { roll: "24CSEAIML205", name: "ALOK KUMAR PADHI" },
+          { roll: "24CSEAIML209", name: "PRATIK KUMAR NAYAK" },
+          { roll: "24CSEAIML213", name: "MANOJ BARIK" },
+          { roll: "24CSEAIML217", name: "ANIGRACE KANDAPAN" },
+          { roll: "24CSEAIML222", name: "M PANVI MOHAN" },
+          { roll: "24CSEAIML228", name: "SWAYAMJIT SASMAL" },
+          { roll: "24CSEAIML232", name: "RUDRA SWAIN" },
+          { roll: "24CSEAIML236", name: "RAJDEEP MAJHI" },
+          { roll: "24CSEAIML241", name: "DEBASIS JENA" },
+          { roll: "24CSEAIML245", name: "A. SAI ABHIRAM" },
+          { roll: "24CSEAIML249", name: "S. PRATAP KUMAR REDDY" },
+          { roll: "24CSEAIML253", name: "VED PARKASH TRIPATHI" },
+          { roll: "24CSEAIML259", name: "AMARNATH MUDULI" },
+          { roll: "24CSEAIML263", name: "NISHAN KUMAR BISWAL" },
+          { roll: "24CSEAIML267", name: "IPSITA MISHRA" },
+          { roll: "24CSEAIML271", name: "DIBYA PRASAD BISOI" },
+          { roll: "24CSEAIML275", name: "PRIYATOSH RANA" },
+          { roll: "24CSEAIML281", name: "RUDRAKSHYA KUMAR" },
+          { roll: "24CSEAIML285", name: "SOUBHAGYA KUMAR BARIK" },
+          { roll: "24CSEAIML289", name: "BHUMIKA PATRA" },
+          { roll: "24CSEAIML294", name: "SRAVAN KUMAR PRADHAN" },
+          { roll: "24CSEAIML299", name: "TANISHA NAYAK" },
+          { roll: "24CSEAIML304", name: "HIMANSU SEKHAR MISHRA" },
+          { roll: "24CSEAIML308", name: "D YOGENDRA PATNAIK" },
+          { roll: "24CSEAIML312", name: "SAILESH YADAV" },
+          { roll: "24CSEAIML316", name: "ORLOTU NETAJI" },
+          { roll: "24CSEAIML320", name: "DEBASHEESH TRIPATHY" },
+          { roll: "24CSEAIML324", name: "NANDITA BANDICHHOD" },
+          { roll: "24CSEAIML328", name: "ROMYA RANJAN DASH" },
+          { roll: "24CSEAIML332", name: "PRIYANSHU JENA" }
+        ];
+
+        const subjects = [
+          "A-PYTHON",
+          "Advanced Communication Skills and Professional Ethics ACSPE",
+          "Advanced Communication Skills and Professional Ethics ACSPE-LAB",
+          "APTITUDE",
+          "Computer Organization and Architecture COA",
+          "Design and Analysis of Algorithms DAA",
+          "Design and Analysis of Algorithms DAA LAB",
+          "Introduction to Machine Learning IML",
+          "Modeling and Analytics Laboratory MA LAB",
+          "Operating Systems OS",
+          "Python Programming for Machine Learning PPML",
+          "Python Programming for Machine Learning PPML LAB",
+        ];
+
+        let nextId = users.length + 1;
+
+        for (const s of studentData) {
+          const rollNo = s.roll;
+          const branch = "CSE-AIML";
+          const semester = "4th";
+          const email = `${rollNo.toLowerCase()}.${s.name.toLowerCase().replace(/\s+/g, "")}@giet.edu`;
+
+          const student = {
+            id: nextId++,
+            username: rollNo,
+            password: "password",
+            role: "STUDENT",
+            fullName: s.name,
+            rollNo,
+            email,
+            branch,
+            semester,
+          };
+          users.push(student);
+
+          // Academic records: randomised for each subject with realistic distributions
+          subjects.forEach((subjectCode) => {
+            const total = randomInt(30, 45); // More realistic class count
+            // Create realistic attendance (most students 60-90%, some lower)
+            const attendanceRoll = Math.random();
+            let attended;
+            if (attendanceRoll < 0.7) {
+              // 70% of students have good attendance (75-95%)
+              attended = Math.floor(total * (0.75 + Math.random() * 0.2));
+            } else if (attendanceRoll < 0.9) {
+              // 20% have average attendance (60-75%)
+              attended = Math.floor(total * (0.60 + Math.random() * 0.15));
+            } else {
+              // 10% have low attendance (40-60%)
+              attended = Math.floor(total * (0.40 + Math.random() * 0.20));
+            }
+            attended = Math.max(1, Math.min(attended, total)); // Ensure valid range
+            
+            // Create realistic marks distribution
+            const marksRoll = Math.random();
+            let marks;
+            if (marksRoll < 0.3) {
+              // 30% excellent (85-98)
+              marks = randomInt(85, 98);
+            } else if (marksRoll < 0.6) {
+              // 30% good (70-84)
+              marks = randomInt(70, 84);
+            } else if (marksRoll < 0.85) {
+              // 25% average (55-69)
+              marks = randomInt(55, 69);
+            } else {
+              // 15% need improvement (35-54)
+              marks = randomInt(35, 54);
+            }
+            
+            records.push({
+              studentId: student.id,
+              subjectCode,
+              total,
+              attended,
+              marks,
+              semester,
+            });
+          });
+        }
+
+        // Seed a few notifications
+        const now = new Date();
+        const today = now.toISOString().slice(0, 10);
+
+        notifications.push({
+          id: Date.now(),
+          title: "Welcome to Adaptive Performance Tracker",
+          msg: "This portal helps you monitor attendance and internal marks in real time. Stay consistent and reach out to your faculty for support when needed.",
+          date: today,
+          author: "Admin",
+        });
+
+        notifications.push({
+          id: Date.now() + 1,
+          title: "Mid-Semester Feedback Window",
+          msg: "Students are encouraged to meet faculty mentors during the feedback week to discuss progress and strategies for improvement.",
+          date: today,
+          author: "Admin",
+        });
+
+        return { users, records, notifications };
+      }
+
+      function randomInt(min, max) {
+        return Math.floor(Math.random() * (max - min + 1)) + min;
+      }
+
+      function animateValue(element, start, end, duration, suffix = "") {
+        if (!element) return;
+        const startTime = performance.now();
+        const animate = (currentTime) => {
+          const elapsed = currentTime - startTime;
+          const progress = Math.min(elapsed / duration, 1);
+          const easeOutCubic = 1 - Math.pow(1 - progress, 3);
+          const current = start + (end - start) * easeOutCubic;
+          element.textContent = current.toFixed(1) + suffix;
+          if (progress < 1) {
+            requestAnimationFrame(animate);
+          } else {
+            element.textContent = end.toFixed(1) + suffix;
+          }
+        };
+        requestAnimationFrame(animate);
+      }
+
+      /**********************
+       * State & Utilities
+       **********************/
+
+      let db = loadDB();
+      let currentUser = null;
+      let adminCategoryChart = null;
+      let trendsChart = null;
+      let adminAnalyticsChartView = null;
+      let currentTrendFilter = 'all';
+      let isDarkMode = true;
+      let aiChatOpen = false;
+
+      function showToast(message, type = "error") {
+        const toast = document.getElementById("toast");
+        const msg = document.getElementById("toast-message");
+        const icon = document.getElementById("toast-icon");
+        msg.textContent = message;
+        if (type === "success") {
+          icon.innerHTML = '<i class="fa-solid fa-circle-check"></i>';
+          icon.className = "text-emerald-400";
+        } else if (type === "info") {
+          icon.innerHTML = '<i class="fa-solid fa-circle-info"></i>';
+          icon.className = "text-sky-400";
+        } else {
+          icon.innerHTML = '<i class="fa-solid fa-circle-exclamation"></i>';
+          icon.className = "text-rose-400";
+        }
+        toast.classList.remove("hidden", "opacity-0");
+        toast.classList.add("animate-fade-in");
+        setTimeout(() => {
+          toast.classList.add("opacity-0");
+          setTimeout(() => {
+            toast.classList.add("hidden");
+            toast.classList.remove("opacity-0");
+          }, 200);
+        }, 2600);
+      }
+
+      function calculateCategory(attendancePct, marks) {
+        if (attendancePct >= 75 && marks >= 70) return "Good";
+        if (attendancePct >= 60 && marks >= 50) return "Average";
+        return "At-Risk";
+      }
+
+      /**********************
+       * Theme Management
+       **********************/
+
+      function initTheme() {
+        const saved = localStorage.getItem("apt_theme");
+        if (saved === "light") {
+          toggleTheme();
+        }
+      }
+
+      function toggleTheme() {
+        isDarkMode = !isDarkMode;
+        document.body.classList.toggle("light-mode");
+        const themeIcon = document.querySelector("#theme-toggle i");
+        if (themeIcon) {
+          themeIcon.className = isDarkMode ? "fa-solid fa-moon" : "fa-solid fa-sun";
+        }
+        localStorage.setItem("apt_theme", isDarkMode ? "dark" : "light");
+      }
+
+      /**********************
+       * Achievement Badges System
+       **********************/
+
+      function calculateBadges(studentId) {
+        const records = getStudentRecords(studentId);
+        const aggr = getStudentAggregates(studentId);
+        const badges = [];
+
+        if (aggr.attendancePct >= 90) {
+          badges.push({ id: "perfect-attendance", name: "Perfect Attendance", icon: "fa-calendar-check", color: "emerald" });
+        }
+        if (aggr.avgMarks >= 90) {
+          badges.push({ id: "top-scorer", name: "Top Scorer", icon: "fa-star", color: "amber" });
+        }
+        if (aggr.category === "Good") {
+          badges.push({ id: "excellent-performance", name: "Excellent Performance", icon: "fa-trophy", color: "emerald" });
+        }
+        if (records.length >= 3) {
+          badges.push({ id: "multi-subject", name: "Multi-Subject Master", icon: "fa-book", color: "sky" });
+        }
+        if (aggr.attendancePct >= 75 && aggr.avgMarks >= 70) {
+          badges.push({ id: "consistent-learner", name: "Consistent Learner", icon: "fa-fire", color: "rose" });
+        }
+        if (records.some(r => r.marks >= 95)) {
+          badges.push({ id: "subject-expert", name: "Subject Expert", icon: "fa-gem", color: "violet" });
+        }
+
+        return badges;
+      }
+
+      function renderBadges(studentId) {
+        const container = document.getElementById("badges-container");
+        if (!container) return;
+        const badges = calculateBadges(studentId);
+        container.innerHTML = "";
+        if (!badges.length) {
+          container.innerHTML = '<p class="text-xs text-slate-400">Keep performing to unlock achievements!</p>';
+          return;
+        }
+        badges.forEach(badge => {
+          const div = document.createElement("div");
+          const colorMap = {
+            emerald: "bg-emerald-500/10 text-emerald-300 border-emerald-500/40",
+            amber: "bg-amber-500/10 text-amber-300 border-amber-500/40",
+            sky: "bg-sky-500/10 text-sky-300 border-sky-500/40",
+            rose: "bg-rose-500/10 text-rose-300 border-rose-500/40",
+            violet: "bg-violet-500/10 text-violet-300 border-violet-500/40"
+          };
+          div.className = `inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-[10px] border ${colorMap[badge.color] || colorMap.emerald}`;
+          div.innerHTML = `<i class="fa-solid ${badge.icon}"></i><span>${badge.name}</span>`;
+          container.appendChild(div);
+        });
+      }
+
+      /**********************
+       * Export Functionality
+       **********************/
+
+      function exportToCSV(data, filename) {
+        const headers = Object.keys(data[0]);
+        const csv = [
+          headers.join(","),
+          ...data.map(row => headers.map(header => `"${row[header] || ""}"`).join(","))
+        ].join("\n");
+        const blob = new Blob([csv], { type: "text/csv" });
+        const url = URL.createObjectURL(blob);
+        const a = document.createElement("a");
+        a.href = url;
+        a.download = filename;
+        a.click();
+        URL.revokeObjectURL(url);
+      }
+
+      function exportStudentReport() {
+        if (!currentUser || currentUser.role !== "STUDENT") return;
+        const records = getStudentRecords(currentUser.id);
+        const aggr = getStudentAggregates(currentUser.id);
+        const report = [
+          { Metric: "Overall Attendance", Value: `${aggr.attendancePct.toFixed(1)}%` },
+          { Metric: "Average Marks", Value: `${aggr.avgMarks.toFixed(1)}` },
+          { Metric: "Performance Category", Value: aggr.category },
+          { Metric: "", Value: "" },
+          { Metric: "Subject", Value: "Attendance %", "Marks": "Status" }
+        ];
+        records.forEach(r => {
+          const attPct = r.total ? ((r.attended / r.total) * 100).toFixed(1) : 0;
+          const cat = calculateCategory(attPct, r.marks);
+          report.push({ Metric: r.subjectCode, Value: `${attPct}%`, Marks: `${r.marks}/100`, Status: cat });
+        });
+        exportToCSV(report, `student-report-${currentUser.rollNo || currentUser.username}.csv`);
+        showToast("Report exported successfully!", "success");
+      }
+
+      function exportClassData() {
+        if (!currentUser || currentUser.role !== "FACULTY") return;
+        const branch = currentUser.branch;
+        const students = db.users.filter(u => u.role === "STUDENT" && (!branch || u.branch === branch));
+        const report = students.map(s => {
+          const aggr = getStudentAggregates(s.id);
+          return {
+            "Roll No": s.rollNo || "",
+            "Name": s.fullName,
+            "Branch": s.branch || "",
+            "Attendance %": aggr.attendancePct.toFixed(1),
+            "Avg Marks": aggr.avgMarks.toFixed(1),
+            "Status": aggr.category
+          };
+        });
+        exportToCSV(report, `class-data-${branch || "all"}.csv`);
+        showToast("Class data exported!", "success");
+      }
+
+      /**********************
+       * Trends Chart
+       **********************/
+
+      function renderTrendsChart(filter = currentTrendFilter) {
+        currentTrendFilter = filter;
+        if (!currentUser || currentUser.role !== "STUDENT") return;
+        const records = getStudentRecords(currentUser.id);
+        let allSubjects = [...new Set(records.map(r => r.subjectCode))];
+        
+        let subjects = allSubjects;
+        if (filter === 'lab') {
+            subjects = allSubjects.filter(s => s.toUpperCase().includes("LAB") || s.toUpperCase().includes("LABORATORY"));
+        } else if (filter === 'theory') {
+            subjects = allSubjects.filter(s => !(s.toUpperCase().includes("LAB") || s.toUpperCase().includes("LABORATORY")));
+        }
+
+        // Update button states
+        ['all', 'theory', 'lab'].forEach(type => {
+            const btn = document.getElementById(`filter-${type}`);
+            if (btn) {
+                if (type === filter) {
+                    btn.className = "px-3 py-1.5 text-xs font-medium rounded-lg bg-indigo-500 text-white transition hover:bg-indigo-600 shadow-lg shadow-indigo-500/30";
+                } else {
+                    btn.className = "px-3 py-1.5 text-xs font-medium rounded-lg bg-slate-800 text-slate-300 border border-slate-700 transition hover:bg-slate-700";
+                }
+            }
+        });
+
+        const ctx = document.getElementById("trends-chart")?.getContext("2d");
+        if (!ctx) return;
+
+        if (trendsChart) trendsChart.destroy();
+
+        // Create multiple data points for each subject (simulating weekly/monthly data)
+        const datasets = subjects.map((subj, idx) => {
+          const isLab = subj.toUpperCase().includes("LAB") || subj.toUpperCase().includes("LABORATORY");
+
+          const subjRecords = records.filter(r => r.subjectCode === subj);
+          const baseAttendance = subjRecords[0] ? ((subjRecords[0].attended / subjRecords[0].total) * 100) : 70;
+          // Generate trend data (6 data points showing progression)
+          const trendData = [];
+          for (let i = 0; i < 6; i++) {
+            const variation = (Math.random() - 0.5) * 5; // Reduced variation for clarity
+            trendData.push(Math.max(0, Math.min(100, baseAttendance + variation)));
+          }
+          
+          // Expanded color palette for better distinction
+          const colors = [
+            { border: "#10b981", bg: "rgba(16, 185, 129, 0.05)" }, // Emerald
+            { border: "#3b82f6", bg: "rgba(59, 130, 246, 0.05)" }, // Blue
+            { border: "#8b5cf6", bg: "rgba(139, 92, 246, 0.05)" }, // Violet
+            { border: "#f59e0b", bg: "rgba(245, 158, 11, 0.05)" }, // Amber
+            { border: "#ef4444", bg: "rgba(239, 68, 68, 0.05)" }, // Red
+            { border: "#06b6d4", bg: "rgba(6, 182, 212, 0.05)" }, // Cyan
+            { border: "#ec4899", bg: "rgba(236, 72, 153, 0.05)" }, // Pink
+            { border: "#6366f1", bg: "rgba(99, 102, 241, 0.05)" }, // Indigo
+            { border: "#84cc16", bg: "rgba(132, 204, 22, 0.05)" }, // Lime
+            { border: "#14b8a6", bg: "rgba(20, 184, 166, 0.05)" }, // Teal
+            { border: "#f97316", bg: "rgba(249, 115, 22, 0.05)" }, // Orange
+            { border: "#a855f7", bg: "rgba(168, 85, 247, 0.05)" }, // Purple
+          ];
+          const color = colors[idx % colors.length];
+          
+          return {
+            label: subj,
+            data: trendData,
+            borderColor: color.border,
+            backgroundColor: color.bg,
+            tension: 0.2, // Sharper lines for better precision
+            fill: false, // Disable fill to prevent overlapping
+            borderWidth: 3, // Thicker lines for visibility
+            pointRadius: 4, // Larger points
+            pointHoverRadius: 7,
+            pointBackgroundColor: color.border,
+            pointBorderColor: "#fff",
+            pointBorderWidth: 2,
+            borderDash: isLab ? [6, 4] : [], // Dashed lines for Labs, Solid for Theory
+            pointStyle: isLab ? 'rectRot' : 'circle' // Diamond points for Labs, Circles for Theory
+          };
+        });
+
+        const isLight = document.body.classList.contains("light-mode");
+        const textColor = isLight ? "#0f172a" : "#e5e7eb";
+        const gridColor = isLight ? "rgba(148, 163, 184, 0.3)" : "rgba(31,41,55,0.8)";
+        const bgColor = isLight ? "rgba(255,255,255,0.95)" : "rgba(15,23,42,0.95)";
+
+        trendsChart = new Chart(ctx, {
+          type: "line",
+          data: {
+            labels: ["Week 1", "Week 2", "Week 3", "Week 4", "Week 5", "Week 6"],
+            datasets
+          },
+          options: {
+            responsive: true,
+            maintainAspectRatio: false,
+            animation: {
+              duration: 2000,
+              easing: 'easeInOutQuart'
+            },
+            plugins: {
+              legend: { 
+                position: 'bottom', // Move legend to bottom
+                labels: { 
+                  color: textColor, 
+                  font: { size: 12, weight: '600' }, // Larger, bolder font
+                  padding: 20,
+                  boxWidth: 15,
+                  usePointStyle: true
+                } 
+              },
+              tooltip: {
+                backgroundColor: bgColor,
+                titleColor: textColor,
+                bodyColor: textColor,
+                borderColor: isLight ? "rgba(148, 163, 184, 0.3)" : "rgba(148,163,184,0.6)",
+                borderWidth: 1,
+                padding: 12,
+                cornerRadius: 8
+              }
+            },
+            scales: {
+              y: {
+                beginAtZero: false,
+                suggestedMin: 40, // Allow more breathing room at the bottom
+                max: 100,
+                grid: { 
+                  color: gridColor,
+                  drawBorder: false
+                },
+                ticks: { 
+                  color: isLight ? "#64748b" : "#64748b",
+                  font: { size: 12, weight: '500' }
+                }
+              },
+              x: {
+                grid: { 
+                  display: false,
+                  drawBorder: false
+                },
+                ticks: { 
+                  color: isLight ? "#64748b" : "#9ca3af",
+                  font: { size: 12, weight: '500' }
+                }
+              }
+            }
+          }
+        });
+      }
+
+      /**********************
+       * Leaderboard
+       **********************/
+
+      function renderLeaderboard() {
+        const container = document.getElementById("leaderboard-list");
+        if (!container) return;
+        const students = db.users.filter(u => u.role === "STUDENT");
+        const ranked = students.map(s => {
+          const aggr = getStudentAggregates(s.id);
+          return { ...s, ...aggr, score: (aggr.attendancePct * 0.4) + (aggr.avgMarks * 0.6) };
+        }).sort((a, b) => b.score - a.score);
+
+        container.innerHTML = "";
+        ranked.forEach((s, idx) => {
+          const medal = idx === 0 ? "🥇" : idx === 1 ? "🥈" : idx === 2 ? "🥉" : `${idx + 1}.`;
+          const div = document.createElement("div");
+          div.className = `rounded-xl bg-slate-900/60 border border-slate-800 px-3 py-2.5 flex items-center justify-between ${idx < 3 ? "border-amber-500/40 bg-amber-950/20" : ""}`;
+          div.innerHTML = `
+            <div class="flex items-center gap-3">
+              <span class="text-lg font-bold ${idx < 3 ? "text-amber-400" : "text-slate-400"}">${medal}</span>
+              <div>
+                <p class="text-xs font-semibold text-slate-100">${s.fullName}</p>
+                <p class="text-[10px] text-slate-400 font-mono">${s.rollNo || ""}</p>
+              </div>
+            </div>
+            <div class="text-right">
+              <p class="text-xs font-semibold text-slate-100">${s.score.toFixed(1)} pts</p>
+              <p class="text-[10px] text-slate-400">${s.attendancePct.toFixed(1)}% • ${s.avgMarks.toFixed(1)} marks</p>
+            </div>
+          `;
+          container.appendChild(div);
+        });
+      }
+
+      /**********************
+       * AI Chat Assistant
+       **********************/
+
+      function toggleAIChat() {
+        aiChatOpen = !aiChatOpen;
+        const widget = document.getElementById("ai-chat-widget");
+        const window = document.getElementById("ai-chat-window");
+        if (aiChatOpen) {
+          widget.classList.remove("hidden");
+          window.classList.remove("hidden");
+        } else {
+          window.classList.add("hidden");
+        }
+      }
+
+      async function sendAIMessage(message) {
+        if (!currentUser) return;
+        const messagesContainer = document.getElementById("ai-chat-messages");
+        const userMsg = document.createElement("div");
+        userMsg.className = "flex items-start gap-2 justify-end";
+        userMsg.innerHTML = `
+          <div class="bg-emerald-500/20 rounded-lg px-2.5 py-1.5 max-w-[80%]">
+            <p class="text-xs text-slate-100">${message}</p>
+          </div>
+          <div class="h-6 w-6 rounded-lg bg-emerald-500/20 flex items-center justify-center shrink-0">
+            <i class="fa-solid fa-user text-[10px] text-emerald-300"></i>
+          </div>
+        `;
+        messagesContainer.appendChild(userMsg);
+        messagesContainer.scrollTop = messagesContainer.scrollHeight;
+
+        const botMsg = document.createElement("div");
+        botMsg.className = "flex items-start gap-2";
+        botMsg.innerHTML = `
+          <div class="h-6 w-6 rounded-lg bg-violet-500/20 flex items-center justify-center shrink-0">
+            <i class="fa-solid fa-robot text-[10px] text-violet-300"></i>
+          </div>
+          <div class="bg-slate-900/60 rounded-lg px-2.5 py-1.5">
+            <p class="text-xs text-slate-300">Thinking...</p>
+          </div>
+        `;
+        messagesContainer.appendChild(botMsg);
+        messagesContainer.scrollTop = messagesContainer.scrollHeight;
+
+        try {
+          const context = currentUser.role === "STUDENT" 
+            ? `Student: ${currentUser.fullName}, Roll: ${currentUser.rollNo || ""}. ${JSON.stringify(getStudentAggregates(currentUser.id))}`
+            : `User role: ${currentUser.role}`;
+          const prompt = `You are a helpful academic AI assistant. User context: ${context}. User question: ${message}. Provide a concise, helpful response.`;
+          const response = await callGemini(prompt);
+          botMsg.innerHTML = `
+            <div class="h-6 w-6 rounded-lg bg-violet-500/20 flex items-center justify-center shrink-0">
+              <i class="fa-solid fa-robot text-[10px] text-violet-300"></i>
+            </div>
+            <div class="bg-slate-900/60 rounded-lg px-2.5 py-1.5 prose prose-invert prose-sm">
+              ${(typeof marked.parse === 'function' ? marked.parse(response) : marked(response))}
+            </div>
+          `;
+        } catch (e) {
+          botMsg.innerHTML = `
+            <div class="h-6 w-6 rounded-lg bg-violet-500/20 flex items-center justify-center shrink-0">
+              <i class="fa-solid fa-robot text-[10px] text-violet-300"></i>
+            </div>
+            <div class="bg-slate-900/60 rounded-lg px-2.5 py-1.5">
+              <p class="text-xs text-rose-400">Sorry, I'm having trouble connecting. Please try again.</p>
+            </div>
+          `;
+        }
+        messagesContainer.scrollTop = messagesContainer.scrollHeight;
+      }
+
+      /**********************
+       * Bulk Upload
+       **********************/
+
+      function handleBulkUpload() {
+        const csv = document.getElementById("bulk-csv-input").value.trim();
+        if (!csv) {
+          showToast("Please enter CSV data.", "error");
+          return;
+        }
+        const lines = csv.split("\n").filter(l => l.trim());
+        let success = 0;
+        let errors = [];
+        lines.forEach((line, idx) => {
+          const parts = line.split(",").map(p => p.trim().replace(/^"|"$/g, ""));
+          if (parts.length < 5) {
+            errors.push(`Line ${idx + 1}: Invalid format`);
+            return;
+          }
+          const [studentId, subjectCode, total, attended, marks] = parts;
+          const student = db.users.find(u => u.id === parseInt(studentId) || u.rollNo === studentId);
+          if (!student) {
+            errors.push(`Line ${idx + 1}: Student not found`);
+            return;
+          }
+          const semester = "4th";
+          const existing = db.records.find(r => r.studentId === student.id && r.subjectCode === subjectCode && r.semester === semester);
+          if (existing) {
+            existing.total = parseInt(total);
+            existing.attended = parseInt(attended);
+            existing.marks = parseInt(marks);
+          } else {
+            db.records.push({ studentId: student.id, subjectCode, total: parseInt(total), attended: parseInt(attended), marks: parseInt(marks), semester });
+          }
+          success++;
+        });
+        saveDB(db);
+        document.getElementById("bulk-upload-modal").classList.add("hidden");
+        document.getElementById("bulk-csv-input").value = "";
+        renderFacultyDashboard();
+        showToast(`Uploaded ${success} records${errors.length ? `. ${errors.length} errors.` : "!"}`, errors.length ? "info" : "success");
+      }
+
+      function downloadBulkTemplate() {
+        const template = "StudentID,SubjectCode,Total,Attended,Marks\n24CSE001,CS101,40,32,85\n24CSE002,CS101,40,30,78";
+        const blob = new Blob([template], { type: "text/csv" });
+        const url = URL.createObjectURL(blob);
+        const a = document.createElement("a");
+        a.href = url;
+        a.download = "bulk-upload-template.csv";
+        a.click();
+        URL.revokeObjectURL(url);
+      }
+
+      /**********************
+       * Search & Filter
+       **********************/
+
+      function filterStudentSubjects(searchTerm) {
+        const container = document.getElementById("student-subject-list");
+        const cards = container.querySelectorAll("div");
+        cards.forEach(card => {
+          const text = card.textContent.toLowerCase();
+          card.style.display = text.includes(searchTerm.toLowerCase()) ? "block" : "none";
+        });
+      }
+
+      function filterFacultyStudents(searchTerm, statusFilter) {
+        const tbody = document.getElementById("faculty-class-table");
+        const rows = tbody.querySelectorAll("tr");
+        rows.forEach(row => {
+          const text = row.textContent.toLowerCase();
+          const statusMatch = statusFilter === "all" || row.textContent.includes(statusFilter);
+          const searchMatch = text.includes(searchTerm.toLowerCase());
+          row.style.display = (searchMatch && statusMatch) ? "" : "none";
+        });
+      }
+
+      function filterAdminUsers(searchTerm) {
+        const tbody = document.getElementById("admin-users-table");
+        const rows = tbody.querySelectorAll("tr");
+        rows.forEach(row => {
+          const text = row.textContent.toLowerCase();
+          row.style.display = text.includes(searchTerm.toLowerCase()) ? "" : "none";
+        });
+      }
+
+      function filterAdminUsersView(searchTerm) {
+        const tbody = document.getElementById("admin-users-table-view");
+        if (!tbody) return;
+        const rows = tbody.querySelectorAll("tr");
+        rows.forEach(row => {
+          const text = row.textContent.toLowerCase();
+          row.style.display = text.includes(searchTerm.toLowerCase()) ? "" : "none";
+        });
+      }
+
+      /**********************
+       * Notification Badge
+       **********************/
+
+      function updateNotificationBadge() {
+        const badge = document.getElementById("notification-badge");
+        if (!badge) return;
+        const count = db.notifications.length;
+        if (count > 0) {
+          badge.textContent = count > 9 ? "9+" : count;
+          badge.classList.remove("hidden");
+        } else {
+          badge.classList.add("hidden");
+        }
+      }
+
+      /**********************
+       * Keyboard Shortcuts
+       **********************/
+
+      function setupKeyboardShortcuts() {
+        document.addEventListener("keydown", (e) => {
+          if (e.target.tagName === "INPUT" || e.target.tagName === "TEXTAREA") return;
+          if (e.key === "t" || e.key === "T") {
+            e.preventDefault();
+            toggleTheme();
+          }
+          if (e.key === "a" || e.key === "A") {
+            e.preventDefault();
+            toggleAIChat();
+          }
+          if (e.key === "e" || e.key === "E") {
+            if (currentUser?.role === "STUDENT") {
+              e.preventDefault();
+              exportStudentReport();
+            }
+          }
+        });
+      }
+
+      function getStudentRecords(studentId) {
+        return db.records.filter((r) => r.studentId === studentId);
+      }
+
+      function getStudentAggregates(studentId) {
+        const records = getStudentRecords(studentId);
+        if (!records.length) {
+          return {
+            attendancePct: 0,
+            avgMarks: 0,
+            category: "At-Risk",
+          };
+        }
+
+        let totalClasses = 0;
+        let totalAttended = 0;
+        let marksSum = 0;
+
+        records.forEach((r) => {
+          totalClasses += r.total;
+          totalAttended += r.attended;
+          marksSum += r.marks;
+        });
+
+        const attendancePct = totalClasses ? (totalAttended / totalClasses) * 100 : 0;
+        const avgMarks = marksSum / records.length;
+        const category = calculateCategory(attendancePct, avgMarks);
+
+        return {
+          attendancePct,
+          avgMarks,
+          category,
+        };
+      }
+
+      /**********************
+       * Simple Router
+       **********************/
+
+      function switchView(viewId) {
+        const allViews = document.querySelectorAll("[data-view]");
+        allViews.forEach((el) => {
+          el.classList.add("hidden");
+        });
+        const target = document.querySelector('[data-view="' + viewId + '"]');
+        if (target) {
+          target.classList.remove("hidden");
+        }
+        
+        // Update breadcrumbs
+        updateBreadcrumbs(viewId);
+        
+        // Update active nav
+        document.querySelectorAll('[data-nav]').forEach(btn => {
+          btn.classList.remove('bg-emerald-500/10', 'border', 'border-emerald-500/20');
+        });
+        const activeNav = document.querySelector(`[data-nav="${viewId}"]`);
+        if (activeNav) {
+          activeNav.classList.add('bg-emerald-500/10', 'border', 'border-emerald-500/20');
+        }
+      }
+
+      function updateBreadcrumbs(viewId) {
+        const breadcrumb = document.getElementById("breadcrumb-current");
+        const viewNames = {
+          "student-dashboard": "Dashboard",
+          "student-attendance": "Attendance",
+          "student-marks": "Marks",
+          "student-analytics": "Analytics",
+          "student-profile": "Profile",
+          "faculty-dashboard": "Dashboard",
+          "faculty-class": "Class Management",
+          "faculty-marks": "Marks Upload",
+          "faculty-notices": "Notices",
+          "admin-dashboard": "Dashboard",
+          "admin-users": "User Management",
+          "admin-analytics": "Analytics",
+          "admin-announcements": "Announcements"
+        };
+        if (breadcrumb) {
+          breadcrumb.textContent = viewNames[viewId] || "Dashboard";
+        }
+      }
+
+      function showLogin() {
+        document.getElementById("login-view").classList.remove("hidden");
+        document.getElementById("app-shell").classList.add("hidden");
+        document.getElementById("ai-chat-widget").classList.add("hidden");
+      }
+
+      function showAppShell() {
+        document.getElementById("login-view").classList.add("hidden");
+        document.getElementById("app-shell").classList.remove("hidden");
+        document.getElementById("ai-chat-widget").classList.remove("hidden");
+      }
+
+      function updateSidebarForUser() {
+        const sidebarRole = document.getElementById("sidebar-role");
+        const sidebarUser = document.getElementById("sidebar-user");
+        const navLinks = document.getElementById("nav-links");
+
+        sidebarRole.textContent = currentUser
+          ? currentUser.role === "ADMIN"
+            ? "Administrator"
+            : currentUser.role === "FACULTY"
+            ? "Faculty"
+            : "Student"
+          : "";
+        sidebarUser.textContent = currentUser ? currentUser.fullName : "";
+
+        navLinks.innerHTML = "";
+        if (!currentUser) return;
+
+        const makeLink = (id, icon, label, isActive = false) => {
+          const li = document.createElement("li");
+          li.innerHTML = `
+            <button data-nav="${id}" class="w-full flex items-center gap-3 px-3 py-2.5 rounded-lg text-slate-300 hover:bg-slate-800/80 text-sm transition group ${isActive ? 'bg-emerald-500/10 border border-emerald-500/20' : ''}">
+              <span class="h-8 w-8 rounded-lg bg-slate-900/80 text-slate-400 flex items-center justify-center group-hover:text-emerald-300 group-hover:bg-slate-900/90 transition">
+                <i class="${icon} text-sm"></i>
+              </span>
+              <span class="font-medium">${label}</span>
+            </button>
+          `;
+          return li;
+        };
+
+        if (currentUser.role === "STUDENT") {
+          navLinks.appendChild(makeLink("student-dashboard", "fa-solid fa-house", "Dashboard"));
+          navLinks.appendChild(makeLink("student-attendance", "fa-solid fa-calendar-check", "Attendance"));
+          navLinks.appendChild(makeLink("student-marks", "fa-solid fa-pen-ruler", "Marks"));
+          navLinks.appendChild(makeLink("student-analytics", "fa-solid fa-chart-line", "Analytics"));
+          navLinks.appendChild(makeLink("student-profile", "fa-solid fa-user", "Profile"));
+        } else if (currentUser.role === "FACULTY") {
+          navLinks.appendChild(makeLink("faculty-dashboard", "fa-solid fa-chalkboard-user", "Dashboard"));
+          navLinks.appendChild(makeLink("faculty-class", "fa-solid fa-users", "Class Management"));
+          navLinks.appendChild(makeLink("faculty-marks", "fa-solid fa-file-pen", "Marks Upload"));
+          navLinks.appendChild(makeLink("faculty-notices", "fa-solid fa-bullhorn", "Notices"));
+        } else if (currentUser.role === "ADMIN") {
+          navLinks.appendChild(makeLink("admin-dashboard", "fa-solid fa-shield-halved", "Dashboard"));
+          navLinks.appendChild(makeLink("admin-users", "fa-solid fa-users", "User Management"));
+          navLinks.appendChild(makeLink("admin-analytics", "fa-solid fa-chart-pie", "Analytics"));
+          navLinks.appendChild(makeLink("admin-announcements", "fa-solid fa-bullhorn", "Announcements"));
+        }
+
+        // Attach click handlers
+        navLinks.querySelectorAll("button[data-nav]").forEach((btn) => {
+          btn.addEventListener("click", () => {
+            const targetView = btn.getAttribute("data-nav");
+            switchView(targetView);
+            // Re-render if needed
+            if (targetView === "student-attendance") renderStudentAttendancePage();
+            if (targetView === "student-marks") renderStudentMarksPage();
+            if (targetView === "student-profile") renderStudentProfilePage();
+            if (targetView === "student-analytics") {
+              setTimeout(() => renderTrendsChart(), 100);
+            }
+            if (targetView.startsWith("faculty-")) renderFacultyDashboard();
+            if (targetView === "admin-users") renderAdminUsersPage();
+            if (targetView === "admin-analytics") setTimeout(() => renderAdminAnalyticsPage(), 100);
+            // Close sidebar on mobile
+            if (window.innerWidth < 768) {
+              document.getElementById("sidebar").classList.add("hidden");
+            }
+          });
+        });
+        
+        // Update sidebar quick stats for students
+        if (currentUser.role === "STUDENT") {
+          const sidebarStats = document.getElementById("sidebar-quick-stats");
+          const sidebarStatsContent = document.getElementById("sidebar-stats-content");
+          if (sidebarStats && sidebarStatsContent) {
+            const aggr = getStudentAggregates(currentUser.id);
+            sidebarStatsContent.innerHTML = `
+              <div class="flex justify-between">
+                <span class="text-slate-400">Attendance</span>
+                <span class="text-emerald-300 font-semibold">${aggr.attendancePct.toFixed(1)}%</span>
+              </div>
+              <div class="flex justify-between">
+                <span class="text-slate-400">Avg Marks</span>
+                <span class="text-sky-300 font-semibold">${aggr.avgMarks.toFixed(1)}</span>
+              </div>
+              <div class="flex justify-between">
+                <span class="text-slate-400">Status</span>
+                <span class="text-amber-300 font-semibold">${aggr.category}</span>
+              </div>
+            `;
+            sidebarStats.classList.remove("hidden");
+          }
+        }
+      }
+
+      /**********************
+       * AI Integration (Placeholder)
+       **********************/
+
+      const GEMINI_API_KEY = "AIzaSyC59Ist3QTe58OdGDSvkWvxFgEfZaSvylA";
+
+      async function callGemini(prompt) {
+        const url = `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash-latest:generateContent?key=${GEMINI_API_KEY}`;
+        
+        try {
+          const response = await fetch(url, {
+            method: "POST",
+            headers: {
+              "Content-Type": "application/json",
+            },
+            body: JSON.stringify({
+              contents: [{
+                parts: [{ text: prompt }]
+              }]
+            })
+          });
+
+          if (!response.ok) {
+            throw new Error(`API Error: ${response.status}`);
+          }
+
+          const data = await response.json();
+          if (data.candidates && data.candidates[0] && data.candidates[0].content) {
+            return data.candidates[0].content.parts[0].text;
+          } else {
+            throw new Error("No content generated. It might have been blocked by safety settings.");
+          }
+        } catch (error) {
+          console.error("Gemini API Error:", error);
+          
+          // Smart Fallback: Generate realistic responses when API is unavailable/invalid
+          if (prompt.includes("Overall attendance:")) {
+             const attMatch = prompt.match(/Overall attendance: ([\d.]+)%/);
+             const marksMatch = prompt.match(/Average marks: ([\d.]+)\/100/);
+             const catMatch = prompt.match(/Performance category: (\w+)/);
+             
+             const att = attMatch ? parseFloat(attMatch[1]) : 0;
+             const marks = marksMatch ? parseFloat(marksMatch[1]) : 0;
+             const cat = catMatch ? catMatch[1] : "Average";
+             
+             return `### AI Performance Analysis (Offline Mode)
+
+**Performance Summary:**
+You are currently in the **${cat}** category with **${att}%** attendance and **${marks}** average marks.
+
+**Study Tips:**
+1. **Attendance Focus:** ${att < 75 ? "Your attendance is below 75%. Prioritize attending all upcoming classes to avoid debarment." : "Great job maintaining good attendance. Keep it up!"}
+2. **Academic Consistency:** ${marks < 60 ? "Your average marks indicate a need for more focused study sessions. Try the Pomodoro technique." : "Your marks are consistent. Challenge yourself with advanced problems."}
+3. **Subject Strategy:** Review the subjects where you have missed the most classes.
+4. **Time Management:** Create a weekly schedule allocating time for both revision and relaxation.
+
+**Motivational Note:**
+"Success is the sum of small efforts, repeated day in and day out." Stay consistent!`;
+          } else if (prompt.includes("drafting an official academic notice")) {
+             const topicMatch = prompt.match(/topic: "([^"]+)"/);
+             const topic = topicMatch ? topicMatch[1] : "Notice";
+             return `### NOTICE
+
+**Date:** ${new Date().toISOString().slice(0, 10)}
+**Topic:** ${topic}
+
+Dear Students,
+
+This is to inform you regarding **${topic}**. Please take note of the following details and ensure compliance. We appreciate your cooperation in maintaining the academic standards of our institution.
+
+For any queries, please contact the faculty office.
+
+Regards,
+**Faculty Administration**`;
+          }
+
+          return "### AI Service Unavailable\n\n" +
+            "Unable to connect to the AI service (" + error.message + ").\n\n" +
+            "**Simulated Response:**\n" +
+            "This is a placeholder response because the API call failed. " +
+            "In a production environment, check your API key and network connection.\n\n" +
+            "> " + prompt.substring(0, 100) + "...";
+        }
+      }
+
+      /**********************
+       * Student Rendering
+       **********************/
+
+      function renderStudentDashboard() {
+        if (!currentUser || currentUser.role !== "STUDENT") return;
+        const studentId = currentUser.id;
+        const aggregates = getStudentAggregates(studentId);
+
+        const aggAttendanceEl = document.getElementById("student-agg-attendance");
+        const aggAttendanceBar = document.getElementById("student-agg-attendance-bar");
+        const avgMarksEl = document.getElementById("student-avg-marks");
+        const avgMarksBar = document.getElementById("student-avg-marks-bar");
+        const overallCatEl = document.getElementById("student-overall-category");
+
+        const attendancePct = aggregates.attendancePct || 0;
+        const avgMarks = aggregates.avgMarks || 0;
+
+        // Animate the numbers with delay for visual appeal
+        setTimeout(() => {
+          if (aggAttendanceEl) animateValue(aggAttendanceEl, 0, attendancePct, 1200, "%");
+        }, 300);
+        
+        setTimeout(() => {
+          if (avgMarksEl) animateValue(avgMarksEl, 0, avgMarks, 1200, "");
+        }, 500);
+        
+        // Animate progress bars with smooth transitions
+        setTimeout(() => {
+          if (aggAttendanceBar) {
+            aggAttendanceBar.style.width = Math.min(100, attendancePct).toFixed(0) + "%";
+            aggAttendanceBar.style.transition = "width 1.2s cubic-bezier(0.4, 0, 0.2, 1)";
+          }
+        }, 400);
+        
+        setTimeout(() => {
+          if (avgMarksBar) {
+            avgMarksBar.style.width = Math.min(100, avgMarks).toFixed(0) + "%";
+            avgMarksBar.style.transition = "width 1.2s cubic-bezier(0.4, 0, 0.2, 1)";
+          }
+        }, 600);
+
+        let colorClass = "bg-slate-500";
+        let textColor = "text-slate-400";
+        let borderColor = "border-slate-600/40";
+        let label = aggregates.category;
+        if (aggregates.category === "Good") {
+          colorClass = "bg-emerald-400";
+          textColor = "text-emerald-300";
+          borderColor = "border-emerald-500/40";
+        } else if (aggregates.category === "Average") {
+          colorClass = "bg-amber-400";
+          textColor = "text-amber-300";
+          borderColor = "border-amber-500/40";
+        } else if (aggregates.category === "At-Risk") {
+          colorClass = "bg-rose-400";
+          textColor = "text-rose-300";
+          borderColor = "border-rose-500/40";
+        }
+
+        if (overallCatEl) {
+          overallCatEl.innerHTML = `
+            <span class="inline-flex items-center gap-2 px-3 py-1.5 rounded-lg text-sm bg-slate-900/40 border ${borderColor} animate-scale-in">
+              <span class="inline-flex h-2.5 w-2.5 rounded-full ${colorClass} animate-pulse"></span>
+              <span class="${textColor} font-bold">${label}</span>
+            </span>
+          `;
+        }
+
+        // Subject cards
+        const subjectListEl = document.getElementById("student-subject-list");
+        subjectListEl.innerHTML = "";
+        const records = getStudentRecords(studentId);
+
+        if (!records.length) {
+          subjectListEl.innerHTML =
+            '<p class="text-xs text-slate-400">No academic records found yet.</p>';
+        } else {
+          records.forEach((r) => {
+            const attendancePctSubject = r.total ? (r.attended / r.total) * 100 : 0;
+            const cat = calculateCategory(attendancePctSubject, r.marks);
+
+            let badgeColor =
+              "bg-slate-800 text-slate-200 border border-slate-600/80";
+            if (cat === "Good")
+              badgeColor =
+                "bg-emerald-500/10 text-emerald-300 border border-emerald-500/40";
+            else if (cat === "Average")
+              badgeColor =
+                "bg-amber-500/10 text-amber-300 border border-amber-500/40";
+            else if (cat === "At-Risk")
+              badgeColor = "bg-rose-500/10 text-rose-300 border border-rose-500/40";
+
+            const card = document.createElement("div");
+            card.className =
+              "rounded-xl bg-slate-900/50 border border-slate-800 px-3 py-3 flex flex-col gap-2";
+            card.innerHTML = `
+              <div class="flex items-center justify-between">
+                <div>
+                  <p class="text-[11px] text-slate-400 uppercase tracking-[0.16em]">Subject</p>
+                  <p class="text-sm font-semibold text-slate-100">${r.subjectCode}</p>
+                </div>
+                <span class="inline-flex items-center gap-1.5 text-[10px] px-2.5 py-1 rounded-full ${badgeColor}">
+                  <i class="fa-solid fa-circle-dot text-[8px]"></i>
+                  <span>${cat}</span>
+                </span>
+              </div>
+              <div class="grid grid-cols-2 gap-3 mt-1.5">
+                <div>
+                  <p class="text-[10px] text-slate-400 uppercase tracking-[0.16em]">Attendance</p>
+                  <p class="text-xs text-slate-200 mt-0.5">${r.attended} / ${r.total} classes</p>
+                  <div class="mt-1 w-full h-1.5 bg-slate-800 rounded-full overflow-hidden">
+                    <div class="h-full ${
+                      attendancePctSubject >= 75
+                        ? "bg-emerald-400"
+                        : attendancePctSubject >= 60
+                        ? "bg-amber-400"
+                        : "bg-rose-400"
+                    } rounded-full" style="width:${Math.min(
+              100,
+              attendancePctSubject
+            ).toFixed(0)}%"></div>
+                  </div>
+                  <p class="mt-0.5 text-[10px] text-slate-400">${attendancePctSubject.toFixed(
+                    1
+                  )}%</p>
+                </div>
+                <div>
+                  <p class="text-[10px] text-slate-400 uppercase tracking-[0.16em]">Internal Marks</p>
+                  <p class="text-xs text-slate-200 mt-0.5">${r.marks} / 100</p>
+                  <div class="mt-1 w-full h-1.5 bg-slate-800 rounded-full overflow-hidden">
+                    <div class="h-full ${
+                      r.marks >= 70 ? "bg-emerald-400" : r.marks >= 50 ? "bg-amber-400" : "bg-rose-400"
+                    } rounded-full" style="width:${Math.min(100, r.marks).toFixed(0)}%"></div>
+                  </div>
+                </div>
+              </div>
+            `;
+            subjectListEl.appendChild(card);
+          });
+        }
+
+        // Welcome name
+        const welcomeName = document.getElementById("student-welcome-name");
+        if (welcomeName) welcomeName.textContent = currentUser.fullName;
+
+        // Profile preview
+        const profilePreview = document.getElementById("student-profile-preview");
+        if (profilePreview) profilePreview.textContent = currentUser.fullName;
+
+        // Profile page
+        const profileName = document.getElementById("profile-name");
+        if (profileName) profileName.textContent = currentUser.fullName;
+        const profileRoll = document.getElementById("profile-roll");
+        if (profileRoll) profileRoll.textContent = currentUser.rollNo || "-";
+        const profileEmail = document.getElementById("profile-email");
+        if (profileEmail) profileEmail.textContent = currentUser.email || "-";
+        const profileBranch = document.getElementById("profile-branch");
+        if (profileBranch) profileBranch.textContent = currentUser.branch || "-";
+        const profileSem = document.getElementById("profile-sem");
+        if (profileSem) profileSem.textContent = currentUser.semester || "-";
+
+        // Profile stats with animation
+        const profileAttendance = document.getElementById("profile-attendance");
+        if (profileAttendance) {
+          setTimeout(() => animateValue(profileAttendance, 0, aggregates.attendancePct, 1000, "%"), 200);
+        }
+        const profileMarks = document.getElementById("profile-marks");
+        if (profileMarks) {
+          setTimeout(() => animateValue(profileMarks, 0, aggregates.avgMarks, 1000, ""), 400);
+        }
+        const profileStatus = document.getElementById("profile-status");
+        if (profileStatus) {
+          const statusColors = {
+            "Good": "text-emerald-500",
+            "Average": "text-amber-500",
+            "At-Risk": "text-rose-500"
+          };
+          profileStatus.textContent = aggregates.category;
+          profileStatus.className = `text-lg font-semibold ${statusColors[aggregates.category] || "text-slate-400"} animate-fade-in`;
+        }
+
+        // Badges
+        renderBadges(studentId);
+
+        // Notifications preview
+        renderNotificationsList("student-notifications-preview", 3);
+        updateNotificationBadge();
+
+        // Render attendance page
+        renderStudentAttendancePage();
+        
+        // Render marks page
+        renderStudentMarksPage();
+      }
+
+      function renderStudentAttendancePage() {
+        if (!currentUser || currentUser.role !== "STUDENT") return;
+        const container = document.getElementById("student-attendance-list");
+        if (!container) return;
+        const records = getStudentRecords(currentUser.id);
+        container.innerHTML = "";
+        
+        if (!records.length) {
+          container.innerHTML = '<p class="text-slate-400 text-center py-8">No attendance records found.</p>';
+          return;
+        }
+
+        records.forEach((r, idx) => {
+          const attendancePct = r.total ? ((r.attended / r.total) * 100) : 0;
+          const card = document.createElement("div");
+          card.className = "rounded-xl bg-slate-900/50 border border-slate-800 p-5 hover:border-emerald-500/30 transition animate-fade-in";
+          card.style.setProperty("--stagger-delay", idx);
+          card.innerHTML = `
+            <div class="flex items-center justify-between mb-3">
+              <div>
+                <h3 class="text-lg font-semibold text-slate-50">${r.subjectCode}</h3>
+                <p class="text-xs text-slate-400">Semester: ${r.semester}</p>
+              </div>
+              <div class="text-right">
+                <p class="text-2xl font-bold ${attendancePct >= 75 ? 'text-emerald-400' : attendancePct >= 60 ? 'text-amber-400' : 'text-rose-400'}">${attendancePct.toFixed(1)}%</p>
+                <p class="text-xs text-slate-400">${r.attended} / ${r.total} classes</p>
+              </div>
+            </div>
+            <div class="w-full h-3 bg-slate-800 rounded-full overflow-hidden mb-2">
+              <div class="h-full ${attendancePct >= 75 ? 'bg-emerald-400' : attendancePct >= 60 ? 'bg-amber-400' : 'bg-rose-400'} rounded-full transition-all duration-1000 ease-out" style="width:0%"></div>
+            </div>
+            <div class="flex items-center justify-between text-xs text-slate-400">
+              <span>Absent: ${r.total - r.attended} classes</span>
+              <span>Required: ${Math.ceil(r.total * 0.75)} for 75%</span>
+            </div>
+          `;
+          container.appendChild(card);
+          // Animate progress bar
+          setTimeout(() => {
+            const bar = card.querySelector('.h-full');
+            if (bar) bar.style.width = Math.min(100, attendancePct) + "%";
+          }, 100 * (idx + 1));
+        });
+      }
+
+      function renderStudentProfilePage() {
+        if (!currentUser || currentUser.role !== "STUDENT") return;
+        
+        const nameEl = document.getElementById("profile-view-name");
+        if (nameEl) nameEl.textContent = currentUser.fullName;
+        const rollEl = document.getElementById("profile-view-roll");
+        if (rollEl) rollEl.textContent = currentUser.rollNo || "-";
+        const emailEl = document.getElementById("profile-view-email");
+        if (emailEl) emailEl.textContent = currentUser.email || "-";
+        const branchEl = document.getElementById("profile-view-branch");
+        if (branchEl) branchEl.textContent = currentUser.branch || "-";
+        const semEl = document.getElementById("profile-view-sem");
+        if (semEl) semEl.textContent = currentUser.semester || "-";
+
+        const aggr = getStudentAggregates(currentUser.id);
+        
+        const profileAttendance = document.getElementById("profile-attendance");
+        if (profileAttendance) animateValue(profileAttendance, 0, aggr.attendancePct, 1000, "%");
+        
+        const profileMarks = document.getElementById("profile-marks");
+        if (profileMarks) animateValue(profileMarks, 0, aggr.avgMarks, 1000, "");
+
+        const profileStatus = document.getElementById("profile-status");
+        if (profileStatus) {
+           profileStatus.textContent = aggr.category;
+           profileStatus.className = `text-2xl font-bold ${aggr.category === "Good" ? "text-emerald-400" : aggr.category === "Average" ? "text-amber-400" : "text-rose-400"}`;
+        }
+        
+        renderBadges(currentUser.id);
+      }
+
+      function renderStudentMarksPage() {
+        if (!currentUser || currentUser.role !== "STUDENT") return;
+        const container = document.getElementById("student-marks-list");
+        if (!container) return;
+        const records = getStudentRecords(currentUser.id);
+        container.innerHTML = "";
+        
+        if (!records.length) {
+          container.innerHTML = '<p class="text-slate-400 text-center py-8">No marks records found.</p>';
+          return;
+        }
+
+        records.forEach((r, idx) => {
+          const card = document.createElement("div");
+          card.className = "rounded-xl bg-slate-900/50 border border-slate-800 p-5 hover:border-sky-500/30 transition animate-fade-in";
+          card.style.setProperty("--stagger-delay", idx);
+          const grade = r.marks >= 90 ? 'A+' : r.marks >= 80 ? 'A' : r.marks >= 70 ? 'B+' : r.marks >= 60 ? 'B' : r.marks >= 50 ? 'C' : 'D';
+          card.innerHTML = `
+            <div class="flex items-center justify-between mb-3">
+              <div>
+                <h3 class="text-lg font-semibold text-slate-50">${r.subjectCode}</h3>
+                <p class="text-xs text-slate-400">Semester: ${r.semester}</p>
+              </div>
+              <div class="text-right">
+                <p class="text-2xl font-bold ${r.marks >= 70 ? 'text-emerald-400' : r.marks >= 50 ? 'text-amber-400' : 'text-rose-400'}">0</p>
+                <p class="text-xs text-slate-400">out of 100</p>
+              </div>
+            </div>
+            <div class="w-full h-3 bg-slate-800 rounded-full overflow-hidden mb-2">
+              <div class="h-full ${r.marks >= 70 ? 'bg-emerald-400' : r.marks >= 50 ? 'bg-amber-400' : 'bg-rose-400'} rounded-full transition-all duration-1000 ease-out" style="width:0%"></div>
+            </div>
+            <div class="flex items-center justify-between text-xs text-slate-400">
+              <span>Grade: <span class="font-semibold text-slate-300">${grade}</span></span>
+              <span>Status: ${r.marks >= 70 ? 'Excellent' : r.marks >= 50 ? 'Good' : 'Needs Improvement'}</span>
+            </div>
+          `;
+          container.appendChild(card);
+          // Animate marks number
+          const marksEl = card.querySelector('.text-2xl');
+          if (marksEl) animateValue(marksEl, 0, r.marks, 1000, "");
+          // Animate progress bar
+          setTimeout(() => {
+            const bar = card.querySelector('.h-full');
+            if (bar) bar.style.width = Math.min(100, r.marks) + "%";
+          }, 100 * (idx + 1));
+        });
+      }
+
+      /**********************
+       * Faculty Rendering
+       **********************/
+
+      function renderFacultyDashboard() {
+        if (!currentUser || currentUser.role !== "FACULTY") return;
+
+        const branch = currentUser.branch;
+        const students = db.users.filter(
+          (u) => u.role === "STUDENT" && (!branch || u.branch === branch)
+        );
+
+        // Dashboard Stats (Moved to top for immediate feedback)
+        const totalStudents = students.length;
+        const totalAtt = students.reduce((acc, s) => acc + getStudentAggregates(s.id).attendancePct, 0);
+        const avgAtt = totalStudents ? (totalAtt / totalStudents).toFixed(1) : 0;
+        const riskCount = students.filter(s => getStudentAggregates(s.id).category === "At-Risk").length;
+
+        const elTotal = document.getElementById("fac-dash-total"); if(elTotal) elTotal.textContent = totalStudents;
+        const elAvg = document.getElementById("fac-dash-avg"); if(elAvg) elAvg.textContent = avgAtt + "%";
+        const elRisk = document.getElementById("fac-dash-risk"); if(elRisk) elRisk.textContent = riskCount;
+
+        // Class analytics table
+        const tbody = document.getElementById("faculty-class-table");
+        if (tbody) tbody.innerHTML = "";
+
+        const dashTbody = document.getElementById("faculty-dashboard-table");
+        if (dashTbody) dashTbody.innerHTML = "";
+
+        students.forEach((s) => {
+          const aggr = getStudentAggregates(s.id);
+          const row = document.createElement("tr");
+
+          let badgeColorClasses =
+            "bg-slate-800 text-slate-200 border border-slate-700/80";
+          if (aggr.category === "Good")
+            badgeColorClasses =
+              "bg-emerald-500/10 text-emerald-300 border border-emerald-500/40";
+          else if (aggr.category === "Average")
+            badgeColorClasses =
+              "bg-amber-500/10 text-amber-300 border border-amber-500/40";
+          else if (aggr.category === "At-Risk")
+            badgeColorClasses =
+              "bg-rose-500/10 text-rose-300 border border-rose-500/40";
+
+          row.className =
+            "hover:bg-slate-800/60 transition " +
+            (aggr.category === "At-Risk" ? "bg-rose-950/30" : "");
+
+          row.innerHTML = `
+            <td class="py-2 pr-3">
+              <div class="flex flex-col">
+                <span class="font-medium text-slate-100">${s.fullName}</span>
+                <span class="text-[10px] text-slate-400">${s.branch || ""} ${
+            s.semester ? " • " + s.semester : ""
+          }</span>
+              </div>
+            </td>
+            <td class="py-2 px-3 font-mono text-[11px] text-emerald-300">${s.rollNo || "-"}</td>
+            <td class="py-2 px-3 w-40">
+              <div class="w-full h-1.5 bg-slate-900 rounded-full overflow-hidden mb-1">
+                <div class="h-full ${
+                  aggr.attendancePct >= 75
+                    ? "bg-emerald-400"
+                    : aggr.attendancePct >= 60
+                    ? "bg-amber-400"
+                    : "bg-rose-400"
+                } rounded-full" style="width:${Math.min(
+            100,
+            aggr.attendancePct
+          ).toFixed(0)}%"></div>
+              </div>
+              <p class="text-[11px] text-slate-300">${aggr.attendancePct.toFixed(1)}%</p>
+            </td>
+            <td class="py-2 px-3 w-40">
+              <div class="w-full h-1.5 bg-slate-900 rounded-full overflow-hidden mb-1">
+                <div class="h-full ${
+                  aggr.avgMarks >= 70
+                    ? "bg-emerald-400"
+                    : aggr.avgMarks >= 50
+                    ? "bg-amber-400"
+                    : "bg-rose-400"
+                } rounded-full" style="width:${Math.min(
+            100,
+            aggr.avgMarks
+          ).toFixed(0)}%"></div>
+              </div>
+              <p class="text-[11px] text-slate-300">${aggr.avgMarks.toFixed(1)}</p>
+            </td>
+            <td class="py-2 px-3">
+              <span class="inline-flex items-center gap-1.5 text-[10px] px-2.5 py-1 rounded-full ${badgeColorClasses}">
+                <i class="fa-solid fa-circle-dot text-[8px]"></i>
+                <span>${aggr.category}</span>
+              </span>
+            </td>
+          `;
+          if (tbody) tbody.appendChild(row);
+          if (dashTbody) dashTbody.appendChild(row.cloneNode(true));
+        });
+
+        // Section label
+        const sectionLabel = document.querySelector("#faculty-section-label span");
+        sectionLabel.textContent = branch ? branch + " Department" : "All Departments";
+
+        // Marks upload form - populate students
+        const studentSelect = document.getElementById("marks-student-select");
+        studentSelect.innerHTML = "";
+        students.forEach((s) => {
+          const opt = document.createElement("option");
+          opt.value = s.id;
+          opt.textContent = `${s.fullName} (${s.rollNo || "-"})`;
+          studentSelect.appendChild(opt);
+        });
+
+        // Notifications
+        renderNotificationsList("faculty-notifications");
+        updateNotificationBadge();
+      }
+
+      /**********************
+       * Admin Rendering
+       **********************/
+
+      function renderAdminDashboard() {
+        if (!currentUser || currentUser.role !== "ADMIN") return;
+
+        const totalUsers = db.users.length;
+        const totalStudents = db.users.filter((u) => u.role === "STUDENT").length;
+
+        let good = 0;
+        let average = 0;
+        let atRisk = 0;
+        db.users
+          .filter((u) => u.role === "STUDENT")
+          .forEach((s) => {
+            const aggr = getStudentAggregates(s.id);
+            if (aggr.category === "Good") good++;
+            else if (aggr.category === "Average") average++;
+            else if (aggr.category === "At-Risk") atRisk++;
+          });
+
+        document.getElementById("admin-total-users").textContent = totalUsers;
+        document.getElementById("admin-total-students").textContent = totalStudents;
+        document.getElementById("admin-at-risk-count").textContent = atRisk;
+
+        // Chart
+        const ctx = document.getElementById("admin-category-chart").getContext("2d");
+        if (adminCategoryChart) {
+          adminCategoryChart.destroy();
+        }
+        const chartType = document.getElementById("chart-type-toggle")?.querySelector("i")?.className.includes("pie") ? "pie" : "bar";
+        adminCategoryChart = new Chart(ctx, {
+          type: chartType,
+          data: {
+            labels: ["Good", "Average", "At-Risk"],
+            datasets: chartType === "pie" ? [{
+              label: "Students",
+              data: [good, average, atRisk],
+              backgroundColor: [
+                "rgba(34, 197, 94, 0.7)",
+                "rgba(251, 191, 36, 0.7)",
+                "rgba(248, 113, 113, 0.8)",
+              ],
+            }] : [{
+              label: "Students",
+              data: [good, average, atRisk],
+              backgroundColor: [
+                "rgba(34, 197, 94, 0.7)",
+                "rgba(251, 191, 36, 0.7)",
+                "rgba(248, 113, 113, 0.8)",
+              ],
+              borderRadius: 14,
+              maxBarThickness: 42,
+            }],
+          },
+          options: {
+            responsive: true,
+            maintainAspectRatio: false,
+            plugins: {
+              legend: {
+                display: chartType === "pie",
+                labels: { color: "#e5e7eb", font: { size: 11 } }
+              },
+              tooltip: {
+                backgroundColor: "rgba(15,23,42,0.95)",
+                titleColor: "#e5e7eb",
+                bodyColor: "#e5e7eb",
+                borderColor: "rgba(148,163,184,0.6)",
+                borderWidth: 1,
+              },
+            },
+            scales: chartType === "bar" ? {
+              x: {
+                grid: {
+                  display: false,
+                },
+                ticks: {
+                  color: "#9ca3af",
+                  font: { size: 11 },
+                },
+              },
+              y: {
+                grid: {
+                  color: "rgba(31,41,55,0.8)",
+                },
+                ticks: {
+                  color: "#64748b",
+                  stepSize: 1,
+                  precision: 0,
+                },
+              },
+            } : undefined,
+          },
+        });
+
+        // Users table
+        const tbody = document.getElementById("admin-users-table");
+        tbody.innerHTML = "";
+        db.users.forEach((u) => {
+          const row = document.createElement("tr");
+          row.className = "hover:bg-slate-800/60 transition";
+          row.innerHTML = `
+            <td class="py-2 pr-3">
+              <span class="font-medium text-slate-100">${u.fullName}</span>
+            </td>
+            <td class="py-2 px-3 text-slate-300">
+              <span class="font-mono text-[11px]">${u.username}</span>
+            </td>
+            <td class="py-2 px-3">
+              <span class="inline-flex items-center gap-1.5 text-[10px] px-2.5 py-1 rounded-full ${
+                u.role === "ADMIN"
+                  ? "bg-rose-500/10 text-rose-300 border border-rose-500/40"
+                  : u.role === "FACULTY"
+                  ? "bg-sky-500/10 text-sky-300 border border-sky-500/40"
+                  : "bg-emerald-500/10 text-emerald-300 border border-emerald-500/40"
+              }">
+                <i class="fa-solid ${
+                  u.role === "ADMIN"
+                    ? "fa-shield-halved"
+                    : u.role === "FACULTY"
+                    ? "fa-chalkboard-user"
+                    : "fa-user-graduate"
+                } text-[9px]"></i>
+                <span>${u.role}</span>
+              </span>
+            </td>
+            <td class="py-2 px-3 text-slate-300">
+              ${
+                u.role === "STUDENT"
+                  ? `<span class="font-mono text-[11px] text-emerald-300">${u.rollNo}</span> <span class="text-[11px] text-slate-400">• ${
+                      u.branch || "-"
+                    }</span>`
+                  : u.branch || "-"
+              }
+            </td>
+            <td class="py-2 px-3 text-slate-300 text-[11px]">
+              ${u.semester || "-"}
+            </td>
+          `;
+          tbody.appendChild(row);
+        });
+
+        // Announcements list
+        renderNotificationsList("admin-announcements-list");
+        updateNotificationBadge();
+      }
+
+      function renderAdminUsersPage() {
+        if (!currentUser || currentUser.role !== "ADMIN") return;
+        const tbody = document.getElementById("admin-users-table-view");
+        if (!tbody) return;
+        tbody.innerHTML = "";
+        
+        db.users.forEach((u) => {
+          const row = document.createElement("tr");
+          row.className = "hover:bg-slate-800/60 transition";
+          row.innerHTML = `
+            <td class="py-2 pr-3">
+              <span class="font-medium text-slate-100">${u.fullName}</span>
+            </td>
+            <td class="py-2 px-3 text-slate-300">
+              <span class="font-mono text-[11px]">${u.username}</span>
+            </td>
+            <td class="py-2 px-3">
+              <span class="inline-flex items-center gap-1.5 text-[10px] px-2.5 py-1 rounded-full ${
+                u.role === "ADMIN"
+                  ? "bg-rose-500/10 text-rose-300 border border-rose-500/40"
+                  : u.role === "FACULTY"
+                  ? "bg-sky-500/10 text-sky-300 border border-sky-500/40"
+                  : "bg-emerald-500/10 text-emerald-300 border border-emerald-500/40"
+              }">
+                <i class="fa-solid ${
+                  u.role === "ADMIN"
+                    ? "fa-shield-halved"
+                    : u.role === "FACULTY"
+                    ? "fa-chalkboard-user"
+                    : "fa-user-graduate"
+                } text-[9px]"></i>
+                <span>${u.role}</span>
+              </span>
+            </td>
+            <td class="py-2 px-3 text-slate-300">
+              ${
+                u.role === "STUDENT"
+                  ? `<span class="font-mono text-[11px] text-emerald-300">${u.rollNo}</span> <span class="text-[11px] text-slate-400">• ${
+                      u.branch || "-"
+                    }</span>`
+                  : u.branch || "-"
+              }
+            </td>
+            <td class="py-2 px-3 text-slate-300 text-[11px]">
+              ${u.semester || "-"}
+            </td>
+          `;
+          tbody.appendChild(row);
+        });
+      }
+
+      function renderAdminAnalyticsPage() {
+        if (!currentUser || currentUser.role !== "ADMIN") return;
+        const ctx = document.getElementById("admin-analytics-chart-view")?.getContext("2d");
+        if (!ctx) return;
+
+        if (adminAnalyticsChartView) {
+          adminAnalyticsChartView.destroy();
+        }
+
+        let good = 0;
+        let average = 0;
+        let atRisk = 0;
+        db.users
+          .filter((u) => u.role === "STUDENT")
+          .forEach((s) => {
+            const aggr = getStudentAggregates(s.id);
+            if (aggr.category === "Good") good++;
+            else if (aggr.category === "Average") average++;
+            else if (aggr.category === "At-Risk") atRisk++;
+          });
+
+        adminAnalyticsChartView = new Chart(ctx, {
+          type: "bar",
+          data: {
+            labels: ["Good", "Average", "At-Risk"],
+            datasets: [{
+              label: "Student Performance Distribution",
+              data: [good, average, atRisk],
+              backgroundColor: [
+                "rgba(34, 197, 94, 0.7)",
+                "rgba(251, 191, 36, 0.7)",
+                "rgba(248, 113, 113, 0.8)",
+              ],
+              borderColor: [
+                "rgba(34, 197, 94, 1)",
+                "rgba(251, 191, 36, 1)",
+                "rgba(248, 113, 113, 1)",
+              ],
+              borderWidth: 1,
+              borderRadius: 8,
+              maxBarThickness: 60,
+            }],
+          },
+          options: {
+            responsive: true,
+            maintainAspectRatio: false,
+            plugins: {
+              legend: {
+                labels: { color: "#e5e7eb" }
+              },
+              tooltip: {
+                backgroundColor: "rgba(15,23,42,0.95)",
+                titleColor: "#e5e7eb",
+                bodyColor: "#e5e7eb",
+                borderColor: "rgba(148,163,184,0.6)",
+                borderWidth: 1,
+              },
+            },
+            scales: {
+              x: {
+                grid: { display: false },
+                ticks: { color: "#9ca3af" },
+              },
+              y: {
+                grid: { color: "rgba(31,41,55,0.8)" },
+                ticks: { color: "#64748b", stepSize: 1 },
+              },
+            },
+          },
+        });
+      }
+
+      /**********************
+       * Notifications
+       **********************/
+
+      function renderNotificationsList(elementId, limit = null) {
+        const container = document.getElementById(elementId);
+        if (!container) return;
+        container.innerHTML = "";
+
+        if (!db.notifications.length) {
+          container.innerHTML =
+            '<p class="text-sm text-slate-400 text-center py-4">No announcements yet.</p>';
+          return;
+        }
+        const sorted = [...db.notifications].sort(
+          (a, b) => new Date(b.date) - new Date(a.date)
+        );
+        const toShow = limit ? sorted.slice(0, limit) : sorted;
+
+        toShow.forEach((n) => {
+          const div = document.createElement("div");
+          div.className =
+            "rounded-lg bg-slate-900/60 border border-slate-800 px-4 py-3 flex flex-col gap-2 hover:border-emerald-500/30 transition";
+          div.innerHTML = `
+            <div class="flex items-center justify-between gap-2">
+              <p class="text-sm font-semibold text-slate-100">${n.title}</p>
+              <span class="text-xs text-slate-400 font-mono">${n.date}</span>
+            </div>
+            <p class="text-xs text-slate-300 leading-relaxed">${n.msg}</p>
+            <p class="text-xs text-slate-500 italic">— ${n.author}</p>
+          `;
+          container.appendChild(div);
+        });
+      }
+
+      function renderNotificationsStandalone() {
+        renderNotificationsList("notifications-view-list");
+      }
+
+      /**********************
+       * Authentication
+       **********************/
+
+      function attemptLogin(username, password) {
+        const user = db.users.find(
+          (u) => u.username.toLowerCase() === username.toLowerCase() && u.password === password
+        );
+        if (!user) return null;
+        return user;
+      }
+
+      function handleLogin(event) {
+        event.preventDefault();
+        const username = document.getElementById("username").value.trim();
+        const password = document.getElementById("password").value.trim();
+        const spinner = document.getElementById("login-spinner");
+
+        spinner.classList.remove("hidden");
+
+        setTimeout(() => {
+          const user = attemptLogin(username, password);
+          spinner.classList.add("hidden");
+
+          if (!user) {
+            showToast("Invalid credentials. Please check your username or password.", "error");
+            return;
+          }
+
+          currentUser = user;
+          sessionStorage.setItem(
+            SESSION_KEY,
+            JSON.stringify({ id: user.id, username: user.username })
+          );
+
+          showToast("Signed in successfully.", "success");
+          onAuthenticated();
+        }, 500);
+      }
+
+      function restoreSession() {
+        try {
+          const raw = sessionStorage.getItem(SESSION_KEY);
+          if (!raw) return;
+          const parsed = JSON.parse(raw);
+          if (!parsed || typeof parsed.id !== "number") return;
+          const user = db.users.find((u) => u.id === parsed.id);
+          if (user) {
+            currentUser = user;
+            onAuthenticated(true);
+          }
+        } catch (e) {
+          console.warn("Failed to restore session.", e);
+        }
+      }
+
+      function logout() {
+        currentUser = null;
+        sessionStorage.removeItem(SESSION_KEY);
+        // Ensure chat is closed
+        document.getElementById("ai-chat-widget").classList.add("hidden");
+        document.getElementById("ai-chat-window").classList.add("hidden");
+        aiChatOpen = false;
+        window.scrollTo(0, 0);
+        showLogin();
+      }
+
+      function onAuthenticated(isRestored = false) {
+        if (!currentUser) return;
+        showAppShell();
+        updateSidebarForUser();
+
+        if (currentUser.role === "STUDENT") {
+          renderStudentDashboard();
+          switchView("student-dashboard");
+        } else if (currentUser.role === "FACULTY") {
+          renderFacultyDashboard();
+          switchView("faculty-dashboard");
+        } else if (currentUser.role === "ADMIN") {
+          renderAdminDashboard();
+          switchView("admin-dashboard");
+        }
+
+        if (!isRestored) {
+          document.getElementById("username").value = "";
+          document.getElementById("password").value = "";
+        }
+      }
+
+      /**********************
+       * Event Wiring
+       **********************/
+
+      function setupEventListeners() {
+        document
+          .getElementById("login-form")
+          .addEventListener("submit", handleLogin);
+
+        document
+          .getElementById("logout-btn")
+          .addEventListener("click", () => logout());
+
+        // Sidebar toggle for mobile
+        const sidebarToggle = document.getElementById("sidebar-toggle");
+        const sidebar = document.getElementById("sidebar");
+        sidebarToggle.addEventListener("click", () => {
+          sidebar.classList.toggle("hidden");
+        });
+
+        // Student AI analyze
+        const analyzeBtn = document.getElementById("btn-analyze-performance");
+        analyzeBtn.addEventListener("click", async () => {
+          if (!currentUser) return;
+
+          if (currentUser.role === "STUDENT") {
+            const aggr = getStudentAggregates(currentUser.id);
+            const records = getStudentRecords(currentUser.id);
+            const outputEl = document.getElementById("student-ai-output");
+
+            const prompt =
+              "You are an academic mentor for an undergraduate engineering student. " +
+              "Given the following internal performance data, provide 4-6 concise, practical study tips " +
+              "and a short motivational note. Focus on attendance, consistency, and subject-wise improvement.\n\n" +
+              "Overall attendance: " +
+              aggr.attendancePct.toFixed(1) +
+              "%\n" +
+              "Average marks: " +
+              aggr.avgMarks.toFixed(1) +
+              "/100\n" +
+              "Performance category: " +
+              aggr.category +
+              "\n\n" +
+              "Subject-wise details:\n" +
+              records
+                .map(
+                  (r) =>
+                    `- ${r.subjectCode}: ${(
+                      (r.attended / r.total) *
+                      100
+                    ).toFixed(1)}% attendance, ${r.marks}/100 marks`
+                )
+                .join("\n") +
+              "\n\n" +
+              "Respond in markdown with headings and bullet points. Keep the tone supportive and actionable.";
+
+            outputEl.innerHTML =
+              '<p class="text-xs text-slate-400 flex items-center gap-2"><span class="h-3 w-3 rounded-full border-2 border-emerald-400 border-t-transparent animate-spin-soft"></span> Generating AI guidance...</p>';
+            try {
+              const res = await callGemini(prompt);
+              outputEl.innerHTML = (typeof marked.parse === 'function' ? marked.parse(res) : marked(res));
+            } catch (e) {
+              console.error(e);
+              outputEl.innerHTML =
+                '<p class="text-xs text-rose-400">Failed to contact AI service. Please try again later.</p>';
+            }
+          } else if (currentUser.role === "FACULTY") {
+            // Open chat for faculty analysis
+            if (!aiChatOpen) toggleAIChat();
+            
+            // Add user message simulation
+            const messagesContainer = document.getElementById("ai-chat-messages");
+            const userMsg = document.createElement("div");
+            userMsg.className = "flex items-start gap-2 justify-end";
+            userMsg.innerHTML = `
+              <div class="bg-emerald-500/20 rounded-lg px-2.5 py-1.5 max-w-[80%]">
+                <p class="text-xs text-slate-100">Analyze class performance and suggest improvements.</p>
+              </div>
+              <div class="h-6 w-6 rounded-lg bg-emerald-500/20 flex items-center justify-center shrink-0">
+                <i class="fa-solid fa-user text-[10px] text-emerald-300"></i>
+              </div>
+            `;
+            messagesContainer.appendChild(userMsg);
+
+            // Add bot loading message
+            const botMsg = document.createElement("div");
+            botMsg.className = "flex items-start gap-2";
+            botMsg.innerHTML = `
+              <div class="h-6 w-6 rounded-lg bg-violet-500/20 flex items-center justify-center shrink-0">
+                <i class="fa-solid fa-robot text-[10px] text-violet-300"></i>
+              </div>
+              <div class="bg-slate-900/60 rounded-lg px-2.5 py-1.5">
+                <p class="text-xs text-slate-300 flex items-center gap-2">
+                  <span class="h-2 w-2 rounded-full bg-violet-400 animate-pulse"></span> Analyzing class data...
+                </p>
+              </div>
+            `;
+            messagesContainer.appendChild(botMsg);
+            messagesContainer.scrollTop = messagesContainer.scrollHeight;
+
+            // Gather Data
+            const branch = currentUser.branch;
+            const students = db.users.filter(u => u.role === "STUDENT" && (!branch || u.branch === branch));
+            const totalStudents = students.length;
+            const riskCount = students.filter(s => getStudentAggregates(s.id).category === "At-Risk").length;
+            const totalAtt = students.reduce((acc, s) => acc + getStudentAggregates(s.id).attendancePct, 0);
+            const avgAtt = totalStudents ? (totalAtt / totalStudents).toFixed(1) : 0;
+            
+            const prompt = `You are a senior academic faculty advisor. 
+            Analyze the following class performance data for ${branch || "General"} department:
+            - Total Students: ${totalStudents}
+            - Average Attendance: ${avgAtt}%
+            - Students At-Risk: ${riskCount}
+            
+            Provide 3 specific, actionable suggestions for the faculty to improve student engagement and academic performance. 
+            Focus on betterment of students and faculty teaching strategies.
+            Keep it concise and professional.`;
+
+            try {
+              const res = await callGemini(prompt);
+              botMsg.innerHTML = `
+                <div class="h-6 w-6 rounded-lg bg-violet-500/20 flex items-center justify-center shrink-0">
+                  <i class="fa-solid fa-robot text-[10px] text-violet-300"></i>
+                </div>
+                <div class="bg-slate-900/60 rounded-lg px-2.5 py-1.5 prose prose-invert prose-sm">
+                  ${(typeof marked.parse === 'function' ? marked.parse(res) : marked(res))}
+                </div>
+              `;
+            } catch (e) {
+              botMsg.innerHTML = `
+                <div class="h-6 w-6 rounded-lg bg-violet-500/20 flex items-center justify-center shrink-0">
+                  <i class="fa-solid fa-robot text-[10px] text-violet-300"></i>
+                </div>
+                <div class="bg-slate-900/60 rounded-lg px-2.5 py-1.5">
+                  <p class="text-xs text-rose-400">Analysis failed. Please try again.</p>
+                </div>
+              `;
+            }
+            messagesContainer.scrollTop = messagesContainer.scrollHeight;
+          }
+        });
+
+        // Faculty AI notice draft
+        const draftNoticeBtn = document.getElementById("btn-draft-notice");
+        draftNoticeBtn.addEventListener("click", async () => {
+          if (!currentUser || currentUser.role !== "FACULTY") return;
+          const topic = document.getElementById("notice-topic").value.trim();
+          const outputEl = document.getElementById("notice-output");
+          if (!topic) {
+            showToast("Please enter a topic for the notice.", "info");
+            return;
+          }
+
+          const prompt =
+            "You are a faculty member drafting an official academic notice for college students. " +
+            "Write a clear, formal, and student-friendly notice in around 100 words on the topic: \"" +
+            topic +
+            "\".\n\n" +
+            "Tone: professional but approachable.\n" +
+            "Audience: undergraduate engineering students.\n" +
+            "End with a polite closing line.\n\n" +
+            "Respond in markdown without any preamble.";
+
+          outputEl.innerHTML =
+            '<p class="text-xs text-slate-400 flex items-center gap-2"><span class="h-3 w-3 rounded-full border-2 border-violet-400 border-t-transparent animate-spin-soft"></span> Drafting notice with AI...</p>';
+          try {
+            const res = await callGemini(prompt);
+            outputEl.innerHTML = (typeof marked.parse === 'function' ? marked.parse(res) : marked(res));
+          } catch (e) {
+            console.error(e);
+            outputEl.innerHTML =
+              '<p class="text-xs text-rose-400">Failed to contact AI service. Please try again later.</p>';
+          }
+        });
+
+        // Faculty publish notice
+        const publishNoticeBtn = document.getElementById("btn-publish-notice");
+        publishNoticeBtn.addEventListener("click", () => {
+          if (!currentUser || currentUser.role !== "FACULTY") return;
+          const outputEl = document.getElementById("notice-output");
+          const htmlContent = outputEl.innerHTML.trim();
+          if (!htmlContent || htmlContent.includes("Type a short topic")) {
+            showToast("Generate a notice with AI before publishing.", "info");
+            return;
+          }
+
+          const tempEl = document.createElement("div");
+          tempEl.innerHTML = htmlContent;
+          const titleFromHeading =
+            tempEl.querySelector("h1,h2,h3,h4,h5,h6")?.textContent?.trim() || "Notice";
+          const bodyText = tempEl.textContent.trim().slice(0, 600);
+
+          const today = new Date().toISOString().slice(0, 10);
+          db.notifications.push({
+            id: Date.now(),
+            title: titleFromHeading,
+            msg: bodyText,
+            date: today,
+            author: currentUser.fullName || "Faculty",
+          });
+          saveDB(db);
+          renderNotificationsList("faculty-notifications");
+          renderNotificationsList("student-notifications");
+          renderNotificationsList("admin-announcements-list");
+          showToast("Notice published for all users.", "success");
+        });
+
+        // Marks form
+        const marksForm = document.getElementById("marks-form");
+        marksForm.addEventListener("submit", (e) => {
+          e.preventDefault();
+          if (!currentUser || currentUser.role !== "FACULTY") return;
+
+          const studentId = parseInt(
+            document.getElementById("marks-student-select").value,
+            10
+          );
+          const subjectCode = document.getElementById("marks-subject").value.trim();
+          const total = parseInt(
+            document.getElementById("marks-total").value || "0",
+            10
+          );
+          const attended = parseInt(
+            document.getElementById("marks-attended").value || "0",
+            10
+          );
+          const marks = parseInt(
+            document.getElementById("marks-marks").value || "0",
+            10
+          );
+
+          if (!studentId || !subjectCode || total <= 0 || attended < 0 || marks < 0) {
+            showToast("Please enter valid values in all fields.", "error");
+            return;
+          }
+          if (attended > total) {
+            showToast("Attended classes cannot exceed total classes.", "error");
+            return;
+          }
+          if (marks > 100) {
+            showToast("Marks cannot exceed 100.", "error");
+            return;
+          }
+
+          const semester = "4th";
+          const existing = db.records.find(
+            (r) =>
+              r.studentId === studentId && r.subjectCode === subjectCode && r.semester === semester
+          );
+          if (existing) {
+            existing.total = total;
+            existing.attended = attended;
+            existing.marks = marks;
+          } else {
+            db.records.push({
+              studentId,
+              subjectCode,
+              total,
+              attended,
+              marks,
+              semester,
+            });
+          }
+
+          saveDB(db);
+          renderFacultyDashboard();
+          if (currentUser.role === "ADMIN") {
+            renderAdminDashboard();
+          }
+          showToast("Academic record saved.", "success");
+        });
+
+        // Admin announcement form
+        const adminAnnouncementForm = document.getElementById(
+          "admin-announcement-form"
+        );
+        adminAnnouncementForm.addEventListener("submit", (e) => {
+          e.preventDefault();
+          if (!currentUser || currentUser.role !== "ADMIN") return;
+
+          const title = document.getElementById("admin-ann-title").value.trim();
+          const msg = document.getElementById("admin-ann-msg").value.trim();
+          let date = document.getElementById("admin-ann-date").value;
+          if (!date) {
+            date = new Date().toISOString().slice(0, 10);
+          }
+
+          if (!title || !msg) {
+            showToast("Please provide a title and message.", "error");
+            return;
+          }
+
+          db.notifications.push({
+            id: Date.now(),
+            title,
+            msg,
+            date,
+            author: currentUser.fullName || "Admin",
+          });
+          saveDB(db);
+          renderNotificationsList("admin-announcements-list");
+          renderNotificationsList("student-notifications");
+          renderNotificationsList("faculty-notifications");
+          showToast("Announcement posted for all users.", "success");
+
+          adminAnnouncementForm.reset();
+        });
+
+        // Notifications standalone view navigation
+        document
+          .getElementById("view-notifications-btn")
+          .addEventListener("click", () => {
+            renderNotificationsStandalone();
+            switchView("notifications-view");
+          });
+
+        document
+          .getElementById("btn-back-from-notifications")
+          .addEventListener("click", () => {
+            if (!currentUser) return;
+            if (currentUser.role === "STUDENT") switchView("student-dashboard");
+            else if (currentUser.role === "FACULTY") switchView("faculty-dashboard");
+            else if (currentUser.role === "ADMIN") switchView("admin-dashboard");
+          });
+
+        // Theme toggle
+        document.getElementById("theme-toggle").addEventListener("click", toggleTheme);
+
+        // AI Chat
+        document.getElementById("ai-chat-toggle").addEventListener("click", toggleAIChat);
+        document.getElementById("ai-chat-button").addEventListener("click", toggleAIChat);
+        document.getElementById("ai-chat-close").addEventListener("click", () => {
+          document.getElementById("ai-chat-window").classList.add("hidden");
+          aiChatOpen = false;
+        });
+        document.getElementById("ai-chat-send").addEventListener("click", () => {
+          const input = document.getElementById("ai-chat-input");
+          if (input.value.trim()) {
+            sendAIMessage(input.value.trim());
+            input.value = "";
+          }
+        });
+        document.getElementById("ai-chat-input").addEventListener("keypress", (e) => {
+          if (e.key === "Enter" && e.target.value.trim()) {
+            sendAIMessage(e.target.value.trim());
+            e.target.value = "";
+          }
+        });
+
+        // Export buttons
+        const exportBtn = document.getElementById("btn-export-report");
+        if (exportBtn) {
+          exportBtn.addEventListener("click", exportStudentReport);
+        }
+        const exportClassBtn = document.getElementById("btn-export-class");
+        if (exportClassBtn) {
+          exportClassBtn.addEventListener("click", exportClassData);
+        }
+
+        // Trends view
+        const trendsBtn = document.getElementById("btn-view-trends");
+        if (trendsBtn) {
+          trendsBtn.addEventListener("click", () => {
+            renderTrendsChart();
+            switchView("trends-view");
+          });
+        }
+        document.getElementById("btn-back-from-trends").addEventListener("click", () => {
+          if (currentUser?.role === "STUDENT") switchView("student-dashboard");
+        });
+
+        // Leaderboard
+        const leaderboardBtn = document.getElementById("btn-view-leaderboard");
+        if (leaderboardBtn) {
+          leaderboardBtn.addEventListener("click", () => {
+            renderLeaderboard();
+            switchView("leaderboard-view");
+          });
+        }
+        document.getElementById("btn-back-from-leaderboard").addEventListener("click", () => {
+          if (currentUser?.role === "ADMIN") switchView("admin-dashboard");
+        });
+
+        // Bulk upload
+        document.getElementById("btn-bulk-upload").addEventListener("click", () => {
+          document.getElementById("bulk-upload-modal").classList.remove("hidden");
+        });
+        document.getElementById("bulk-upload-close").addEventListener("click", () => {
+          document.getElementById("bulk-upload-modal").classList.add("hidden");
+        });
+        document.getElementById("bulk-upload-submit").addEventListener("click", handleBulkUpload);
+        document.getElementById("bulk-download-template").addEventListener("click", downloadBulkTemplate);
+
+        // Search & Filter
+        const studentSearch = document.getElementById("student-subject-search");
+        if (studentSearch) {
+          studentSearch.addEventListener("input", (e) => filterStudentSubjects(e.target.value));
+        }
+        const facultySearch = document.getElementById("faculty-student-search");
+        const facultyFilter = document.getElementById("faculty-status-filter");
+        if (facultySearch && facultyFilter) {
+          facultySearch.addEventListener("input", () => {
+            filterFacultyStudents(facultySearch.value, facultyFilter.value);
+          });
+          facultyFilter.addEventListener("change", () => {
+            filterFacultyStudents(facultySearch.value, facultyFilter.value);
+          });
+        }
+        const adminSearch = document.getElementById("admin-user-search");
+        if (adminSearch) {
+          adminSearch.addEventListener("input", (e) => filterAdminUsers(e.target.value));
+        }
+        const adminSearchView = document.getElementById("admin-user-search-view");
+        if (adminSearchView) {
+          adminSearchView.addEventListener("input", (e) => filterAdminUsersView(e.target.value));
+        }
+
+        // Chart type toggle
+        const chartToggle = document.getElementById("chart-type-toggle");
+        if (chartToggle) {
+          chartToggle.addEventListener("click", () => {
+            const icon = chartToggle.querySelector("i");
+            const isBar = icon.className.includes("pie");
+            icon.className = isBar ? "fa-solid fa-chart-column" : "fa-solid fa-chart-pie";
+            renderAdminDashboard();
+          });
+        }
+
+        // Trends Filter
+        document.getElementById("filter-all")?.addEventListener("click", () => renderTrendsChart('all'));
+        document.getElementById("filter-theory")?.addEventListener("click", () => renderTrendsChart('theory'));
+        document.getElementById("filter-lab")?.addEventListener("click", () => renderTrendsChart('lab'));
+
+        // Keyboard shortcuts
+        setupKeyboardShortcuts();
+
+        // Card navigation handlers
+        document.querySelectorAll('[data-nav-card]').forEach(card => {
+          card.addEventListener('click', () => {
+            const viewId = card.getAttribute('data-nav-card');
+            switchView(viewId);
+            if (viewId === "student-attendance") renderStudentAttendancePage();
+            if (viewId === "student-marks") renderStudentMarksPage();
+            if (viewId === "student-profile") renderStudentProfilePage();
+            if (viewId === "student-analytics") {
+              setTimeout(() => renderTrendsChart(), 100);
+            }
+          });
+        });
+      }
+
+      /**********************
+       * Bootstrap
+       **********************/
+
+      document.addEventListener("DOMContentLoaded", () => {
+        setupEventListeners();
+        initTheme();
+        // Set default date for admin announcement form
+        const dateInput = document.getElementById("admin-ann-date");
+        if (dateInput) {
+          dateInput.value = new Date().toISOString().slice(0, 10);
+        }
+        // Always show the login page on initial load.
+        // The restoreSession() function is commented out to enforce this.
+        showLogin();
+        updateNotificationBadge();
+      });
+    </script>
+  </body>
+</html>

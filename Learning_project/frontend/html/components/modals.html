@@ -1,0 +1,126 @@
+<!-- Modals Component -->
+<!-- All modal windows used throughout the application -->
+
+<!-- AI Chat Widget (Floating) -->
+<div id="ai-chat-widget" class="fixed bottom-6 right-6 z-50 hidden flex-col gap-3">
+  <div id="ai-chat-window" class="glass-card rounded-2xl p-4 w-80 h-96 flex flex-col shadow-2xl border border-violet-500/30 hidden">
+    <div class="flex items-center justify-between mb-3 pb-2 border-b border-slate-800">
+      <h3 class="text-sm font-semibold text-violet-300">AI Study Companion</h3>
+      <button id="ai-chat-close" class="text-slate-400 hover:text-slate-100 transition">
+        <i class="fa-solid fa-times"></i>
+      </button>
+    </div>
+    <div id="ai-chat-messages" class="flex-1 overflow-y-auto scrollbar-thin space-y-2 text-xs text-slate-300 mb-3">
+      <div class="text-slate-500 text-center text-[11px]">Chat history will appear here</div>
+    </div>
+    <div class="flex items-center gap-2">
+      <input
+        id="ai-chat-input"
+        type="text"
+        placeholder="Ask anything..."
+        class="flex-1 px-3 py-2 rounded-lg bg-slate-800/80 border border-slate-700 text-xs text-slate-100 placeholder-slate-500 focus:outline-none focus:border-violet-500"
+      />
+      <button id="ai-chat-send" class="h-8 w-8 rounded-lg bg-violet-600 hover:bg-violet-700 text-white flex items-center justify-center transition">
+        <i class="fa-solid fa-paper-plane text-xs"></i>
+      </button>
+    </div>
+  </div>
+  <button
+    id="ai-chat-button"
+    class="h-14 w-14 rounded-2xl bg-gradient-to-tr from-violet-500 via-indigo-500 to-purple-500 shadow-lg shadow-violet-500/50 flex items-center justify-center text-white hover:scale-110 transition animate-float"
+  >
+    <i class="fa-solid fa-robot text-xl"></i>
+    <span id="ai-chat-indicator" class="absolute top-0 right-0 h-3 w-3 rounded-full bg-emerald-400 border-2 border-slate-900 animate-pulse"></span>
+  </button>
+</div>
+
+<!-- Bulk Upload Modal -->
+<div id="bulk-upload-modal" class="fixed inset-0 z-50 hidden items-center justify-center bg-black/60 backdrop-blur-sm">
+  <div class="glass-card rounded-2xl p-6 w-full max-w-2xl m-4 max-h-[90vh] overflow-y-auto scrollbar-thin">
+    <div class="flex items-center justify-between mb-4">
+      <div>
+        <h2 class="text-lg font-bold text-slate-100">Bulk Upload Marks</h2>
+        <p class="text-xs text-slate-400">Upload multiple student records at once</p>
+      </div>
+      <button id="bulk-upload-close" class="text-slate-400 hover:text-slate-100">
+        <i class="fa-solid fa-times text-xl"></i>
+      </button>
+    </div>
+
+    <div class="space-y-3 text-xs">
+      <div class="rounded-lg bg-slate-900/60 border border-slate-800 p-3 space-y-2">
+        <p class="font-semibold text-slate-300">📄 CSV Format:</p>
+        <code class="block bg-slate-950 p-2 rounded text-slate-400 overflow-x-auto">
+          studentId,subjectCode,total,attended,marks<br/>
+          1,A-PYTHON,20,18,85<br/>
+          2,ACSPE,20,19,92
+        </code>
+        <button
+          id="bulk-download-template"
+          class="mt-2 px-3 py-1.5 rounded bg-slate-700 hover:bg-slate-600 text-slate-100 transition text-xs font-medium"
+        >
+          📥 Download Template
+        </button>
+      </div>
+
+      <div>
+        <label class="block text-slate-300 font-medium mb-2">Choose CSV File</label>
+        <input
+          id="bulk-upload-file"
+          type="file"
+          accept=".csv"
+          class="w-full px-3 py-2 rounded-lg bg-slate-800/80 border border-slate-700 text-slate-100 text-xs file:mr-3 file:px-3 file:py-1.5 file:rounded file:bg-indigo-600 file:text-white file:border-0 file:cursor-pointer"
+        />
+      </div>
+
+      <button
+        id="bulk-upload-submit"
+        class="w-full py-2 rounded-lg bg-gradient-to-r from-emerald-500 to-green-600 text-white font-semibold hover:shadow-lg transition text-sm"
+      >
+        Upload Records
+      </button>
+    </div>
+  </div>
+</div>
+
+<!-- Goal Setting Modal -->
+<div id="goal-modal" class="fixed inset-0 z-50 hidden items-center justify-center bg-black/60 backdrop-blur-sm animate-fade-in">
+  <div class="glass-card rounded-2xl p-6 w-full max-w-sm m-4 border border-slate-700">
+    <div class="flex items-center justify-between mb-4">
+      <h2 class="text-lg font-bold text-slate-100">Set Your Goal</h2>
+      <button id="goal-modal-close" class="text-slate-400 hover:text-slate-100">
+        <i class="fa-solid fa-times"></i>
+      </button>
+    </div>
+    <form id="goal-form" class="space-y-4">
+      <div>
+        <label class="block text-xs font-semibold text-slate-300 mb-2">Target Attendance %</label>
+        <input
+          id="goal-attendance"
+          type="number"
+          min="0"
+          max="100"
+          placeholder="e.g., 85"
+          class="w-full px-3 py-2 rounded-lg bg-slate-800/80 border border-slate-700 text-slate-100 focus:outline-none focus:border-indigo-500"
+        />
+      </div>
+      <div>
+        <label class="block text-xs font-semibold text-slate-300 mb-2">Target Average Marks</label>
+        <input
+          id="goal-marks"
+          type="number"
+          min="0"
+          max="100"
+          placeholder="e.g., 80"
+          class="w-full px-3 py-2 rounded-lg bg-slate-800/80 border border-slate-700 text-slate-100 focus:outline-none focus:border-indigo-500"
+        />
+      </div>
+      <button
+        type="submit"
+        class="w-full py-2 rounded-lg bg-gradient-to-r from-indigo-500 to-purple-600 text-white font-semibold hover:shadow-lg transition"
+      >
+        Save Goal
+      </button>
+    </form>
+  </div>
+</div>
