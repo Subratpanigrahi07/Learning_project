@@ -1,0 +1,80 @@
+<!-- Sidebar Component -->
+<!-- This is the main navigation sidebar used across the application -->
+
+<aside
+  id="sidebar"
+  class="glass-card w-72 shrink-0 border-r border-slate-800/60 flex flex-col p-5 gap-6 relative"
+>
+  <!-- Logo & Branding -->
+  <div class="flex items-center gap-3 pb-4 border-b border-slate-800/50">
+    <div class="h-10 w-10 rounded-xl bg-gradient-to-br from-violet-500 to-indigo-600 flex items-center justify-center shadow-lg shadow-indigo-500/40">
+      <i class="fa-solid fa-brain text-lg text-white"></i>
+    </div>
+    <div class="flex-1 min-w-0">
+      <p class="font-bold text-slate-100 truncate text-sm">APT</p>
+      <p class="text-xs text-slate-400">Performance Tracker</p>
+    </div>
+  </div>
+
+  <!-- User Info Card -->
+  <div id="user-info-card" class="rounded-lg bg-slate-900/60 border border-slate-800/80 p-3 space-y-2">
+    <p id="sidebar-user-name" class="font-semibold text-sm text-slate-100">User</p>
+    <p id="sidebar-user-role" class="text-xs text-slate-400">Role</p>
+  </div>
+
+  <!-- Navigation Links -->
+  <nav id="nav-links" class="flex-1 space-y-2">
+    <!-- Populated dynamically by JavaScript based on user role -->
+  </nav>
+
+  <!-- Quick Stats -->
+  <div id="quick-stats" class="rounded-lg bg-slate-900/40 border border-slate-800/60 p-3 space-y-3 text-xs">
+    <!-- Populated dynamically by JavaScript -->
+  </div>
+
+  <!-- Bottom Actions -->
+  <div class="flex flex-col gap-2 pt-4 border-t border-slate-800/50">
+    <!-- Theme Toggle -->
+    <button
+      id="theme-toggle"
+      class="w-full py-2 px-3 rounded-lg bg-slate-900/60 border border-slate-800 hover:border-slate-700 text-slate-300 hover:text-slate-100 transition flex items-center justify-between text-xs font-medium"
+    >
+      <span><i class="fa-solid fa-moon mr-2"></i>Theme</span>
+      <i class="fa-solid fa-check text-emerald-400"></i>
+    </button>
+
+    <!-- AI Chat Toggle -->
+    <button
+      id="ai-chat-toggle"
+      class="w-full py-2 px-3 rounded-lg bg-slate-900/60 border border-slate-800 hover:border-violet-500/40 text-slate-300 hover:text-violet-300 transition flex items-center justify-between text-xs font-medium"
+    >
+      <span><i class="fa-solid fa-robot mr-2"></i>AI Chat</span>
+      <span class="h-2 w-2 rounded-full bg-emerald-400"></span>
+    </button>
+
+    <!-- Notifications -->
+    <button
+      id="view-notifications-btn"
+      class="w-full py-2 px-3 rounded-lg bg-slate-900/60 border border-slate-800 hover:border-sky-500/40 text-slate-300 hover:text-sky-300 transition flex items-center justify-between text-xs font-medium"
+    >
+      <span><i class="fa-solid fa-bell mr-2"></i>Notifications</span>
+      <span id="notification-badge" class="h-5 w-5 rounded-full bg-rose-500 text-white text-[10px] flex items-center justify-center font-bold hidden">0</span>
+    </button>
+
+    <!-- Logout -->
+    <button
+      id="logout-btn"
+      class="w-full py-2 px-3 rounded-lg bg-gradient-to-r from-rose-500/20 to-red-500/20 border border-rose-500/40 hover:border-rose-500/60 text-rose-300 hover:text-rose-200 transition flex items-center justify-center text-xs font-medium gap-2"
+    >
+      <i class="fa-solid fa-sign-out-alt"></i>Logout
+    </button>
+  </div>
+
+  <!-- Mobile Toggle Button (Hidden on Desktop) -->
+  <button
+    id="sidebar-toggle"
+    class="hidden md:hidden absolute top-5 right-5 h-10 w-10 rounded-lg bg-slate-900 border border-slate-800 text-slate-300 hover:text-slate-100 transition"
+  >
+    <i class="fa-solid fa-times"></i>
+  </button>
+</aside>
