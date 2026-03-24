@@ -118,8 +118,8 @@ npm start
 ```
 
 ### 3. Usage
-The application is now hosted at `http://localhost:5000`. 
-- Open your browser to `http://localhost:5000` to access the full-stack system.
+The application is now hosted at `http://localhost:3000`. 
+- Open your browser to `http://localhost:3000` to access the full-stack system.
 - Ensure the backend is running to enable data persistence and AI features.
 
 ---
