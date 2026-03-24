@@ -1,300 +1,155 @@
 # Adaptive Performance Tracker (APT)
 
-A comprehensive web-based academic performance management system built with vanilla JavaScript, HTML5, and Tailwind CSS.
+A full-stack premium academic performance management system. APT is an intelligent ERP solution built to revolutionize educational data tracking through real-time analytics, AI-driven insights, and immersive user experiences.
 
-## 📋 Overview
+## 📋 Project Overview
 
-APT is a modern ERP system designed for educational institutions to track student performance, manage academic records, and provide real-time analytics on attendance and marks. The application supports three user roles:
+APT is a modern Educational Enterprise Resource Planning (ERP) system designed for colleges and universities to track student performance, manage academic records, and provide real-time analytics on attendance and marks. By integrating a Node.js backend with a sophisticated Vanilla JS frontend, APT provides a seamless, secure, and highly visual environment for three distinct roles:
 
-- **Students**: Monitor personal academic progress, view trends, and earn achievement badges
-- **Faculty**: Manage class attendance and marks, publish announcements, draft notices with AI assistance
-- **Admins**: System-wide analytics, user management, and institutional announcements
-
-## 🎯 Features
-
-### Student Features
-- **Dashboard**: Real-time performance metrics with visual indicators
-- **Performance Analytics**: Attendance percentage and average marks tracking
-- **Achievement Badges**: Unlock badges based on performance milestones
-- **Trends Analysis**: View subject-wise performance over time
-- **Leaderboard**: Compare performance with peers
-- **Report Export**: Download personal academic reports as CSV
-- **Profile Management**: View and manage academic profile
-- **AI Assistant**: Get personalized study recommendations
-
-### Faculty Features
-- **Class Dashboard**: Monitor class attendance and performance metrics
-- **Bulk Upload**: Import student records via CSV
-- **Marks Management**: Record and update student marks and attendance
-- **Notice Drafting**: AI-powered academic notice generation
-- **Data Export**: Export class data for reporting
-- **Announcements**: Publish system-wide notifications
-- **Performance Analytics**: Analyze class-wide trends
-
-### Admin Features
-- **User Management**: View and manage all system users
-- **System Analytics**: Dashboard with performance distribution charts
-- **Announcement Management**: Create and publish institutional announcements
-- **Data Monitoring**: System-wide performance metrics
-- **Report Generation**: Multi-view analytics dashboards
-
-## 🏗️ Project Structure
-
-```
-Learning_project/
-├── index.html                 # Main HTML file
-├── css/
-│   ├── styles.css            # Base styles and layout
-│   ├── animations.css        # Animation definitions
-│   └── theme.css             # Light/dark mode styles
-├── js/
-│   ├── utils.js              # Utility functions
-│   ├── db.js                 # Database & state management
-│   ├── auth.js               # Authentication logic
-│   ├── ai.js                 # AI assistant integration
-│   ├── chart-manager.js      # Chart rendering
-│   ├── ui.js                 # UI rendering functions
-│   ├── events.js             # Event handlers
-│   └── main.js               # Application initialization
-├── config/
-│   └── tailwind.config.js    # Tailwind CSS configuration
-├── assets/                    # Images, icons, etc.
-├── docs/
-│   ├── README.md             # This file
-│   ├── PROJECT_STRUCTURE.md  # Detailed structure guide
-│   ├── API.md                # API documentation
-│   └── USER_GUIDE.md         # User manual
-└── cursor.html               # Original monolithic file (backup)
-```
-
-## 🚀 Getting Started
-
-### Prerequisites
-- Modern web browser (Chrome, Firefox, Safari, Edge)
-- No backend server required (uses localStorage)
-- Internet connection for CDN resources
-
-### Installation
-
-1. **Clone or download the project**
-   ```bash
-   git clone <repository-url>
-   cd Learning_project
-   ```
-
-2. **Open in browser**
-   ```bash
-   # Simply open index.html in your web browser
-   # Or use a local server (recommended)
-   ```
-
-3. **Using a local server (recommended)**
-   ```bash
-   # Python 3
-   python -m http.server 8000
-   
-   # Python 2
-   python -m SimpleHTTPServer 8000
-   
-   # Node.js (if you have http-server installed)
-   http-server
-   
-   # Then open: http://localhost:8000
-   ```
-
-## 🔐 Demo Credentials
-
-Use these credentials to test the application:
-
-| Role | Username | Password |
-|------|----------|----------|
-| Admin | `admin` | `admin123` |
-| Faculty | `faculty1` | `fac123` |
-| Student | `24cse001` | `student123` |
-
-## 📚 Module Documentation
-
-### `utils.js`
-Common utility functions used across the application:
-- `animateValue()` - Animate numeric values with easing
-- `randomInt()` - Generate random integers
-- `showToast()` - Display toast notifications
-- `calculateCategory()` - Determine student performance category
-- `exportToCSV()` - Export data as CSV files
-- `getFormattedDate()` - Format dates
-
-### `db.js`
-Database and state management:
-- Database schema with users, records, and notifications
-- `loadDB()` / `saveDB()` - Persistence with localStorage
-- `getStudentRecords()` - Retrieve student academic records
-- `getStudentAggregates()` - Calculate performance statistics
-- `calculateBadges()` - Determine earned achievement badges
-
-### `auth.js`
-Authentication and user management:
-- `attemptLogin()` - User login validation
-- `handleLogin()` - Form submission handler
-- `restoreSession()` - Session recovery
-- `logout()` - User logout
-- `initTheme()` / `toggleTheme()` - Theme management
-
-### `ai.js`
-AI assistant integration:
-- `toggleAIChat()` - Open/close chat widget
-- `sendAIMessage()` - Process user messages
-- `callGemini()` - Gemini API integration with fallbacks
-- Mock responses for performance analysis and notice generation
-
-### `chart-manager.js`
-Chart visualization:
-- `renderTrendsChart()` - Subject performance trends
-- `renderAdminCategoryChart()` - Performance distribution
-- `renderAdminAnalyticsChart()` - Detailed analytics
-- Chart.js integration with theme support
-
-### `ui.js`
-User interface rendering:
-- `switchView()` - Navigate between views
-- `updateSidebarForUser()` - Dynamic sidebar based on role
-- `renderStudentDashboard()` - Student overview
-- `renderFacultyDashboard()` - Faculty class management
-- `renderAdminDashboard()` - System administration
-- `renderBadges()` - Achievement badges display
-- `renderNotificationsList()` - Announcements
-
-### `events.js`
-Event handling and interactions:
-- `setupEventListeners()` - Wire all event handlers
-- `exportStudentReport()` - CSV export functionality
-- `exportClassData()` - Faculty data export
-- `handleBulkUpload()` - CSV import processing
-- Search and filter implementations
-- Keyboard shortcuts (Ctrl+K for AI, Ctrl+L for logout)
-
-### `main.js`
-Application initialization:
-- DOM ready event handler
-- Initial theme setup
-- Session restoration
-- Cleanup on unload
-
-## 🎨 Styling
-
-### CSS Architecture
-- **styles.css** - Base styles, glass morphism, layout
-- **animations.css** - Keyframe animations and transitions
-- **theme.css** - Light/dark mode color schemes
-- **Tailwind CSS** - Utility-first framework via CDN
-
-### Design Features
-- Glass morphism cards with hover effects
-- Smooth fade-in and slide animations
-- Responsive grid layouts
-- Dark mode with colorful gradient background
-- Light mode with modern gradient animations
-
-## 🔗 External Dependencies
-
-### CDN Resources
-- **Tailwind CSS** - CSS framework
-- **Font Awesome 6** - Icon library
-- **Chart.js 3.9** - Chart library
-- **Marked.js** - Markdown parser
-- **Google Fonts** - Outfit font
-
-### APIs
-- **Google Gemini** - AI-powered assistance (fallback mode)
-
-## 💾 Data Storage
-
-The application uses browser's **localStorage** for persistence:
-- Database key: `apt_db_v4`
-- Session key: `apt_session`
-- Theme preference: `apt_theme`
-
-**Note**: Data persists across browser sessions but is device-specific.
-
-## 🔄 Data Flow
-
-```
-User Input
-    ↓
-Event Listeners (events.js)
-    ↓
-Data Processing (utils.js, db.js)
-    ↓
-State Update (db.js)
-    ↓
-UI Rendering (ui.js)
-    ↓
-Visual Update
-```
-
-## 🚀 Performance Optimization
-
-- Lazy rendering of charts
-- CSS animations using transform and opacity
-- Debounced search filtering
-- Efficient DOM queries
-- CSS class reuse via Tailwind
-- Minimal JavaScript re-renders
-
-## 🔒 Security Notes
-
-- Passwords stored in localStorage (demo only - use backend auth in production)
-- Input sanitization for HTML content
-- CORS-enabled for external APIs
-- XSS protection in chat messages
-
-## 🐛 Browser Compatibility
-
-- Chrome/Edge: Full support
-- Firefox: Full support
-- Safari: Full support
-- IE 11: Not supported (uses ES6)
-
-## 📱 Responsive Design
-
-- Mobile-first approach
-- Breakpoints: sm (640px), md (768px), lg (1024px), xl (1280px)
-- Sidebar collapses on mobile
-- Touch-friendly buttons and inputs
-
-## 🔮 Future Enhancements
-
-- Backend API integration
-- Database persistence (PostgreSQL/MongoDB)
-- Advanced analytics and reporting
-- Email notifications
-- Mobile app (React Native)
-- Dark mode scheduler
-- Offline functionality (PWA)
-- User preferences customization
-
-## 📄 License
-
-This project is open-source and available for educational use.
-
-## 👨‍💻 Contributing
-
-Contributions are welcome! Please follow these guidelines:
-1. Keep code modular and well-documented
-2. Follow existing code style
-3. Update documentation for new features
-4. Test on multiple browsers
-
-## 📞 Support
-
-For questions or issues, please refer to:
-- `PROJECT_STRUCTURE.md` - Detailed file organization
-- `API.md` - Function reference
-- `USER_GUIDE.md` - End-user documentation
+- **Students**: Leverage the "AI Learning Hub" for personalized study roadmaps, monitor performance trends, and earn achievement badges.
+- **Faculty**: Monitor class-wide analytics, manage bulk academic records, and execute prescriptive interventions using AI-powered drafting.
+- **Admins**: Oversee system-wide performance with market-style trend charts, manage user lifecycles (Add/Remove/Suspend), and broadcast institutional announcements.
 
 ---
 
-**Last Updated**: March 24 2026  
-**Version**: 1.0.0  
-**Status**: Production Ready
+## 🎯 Feature Ecosystem
 
+### 🎓 Student Features
+- **AI Learning Hub**:
+    - **Smart Roadmap**: Generate personalized learning paths based on performance.
+    - **Weakness Analyzer**: Identify subject-specific gaps automatically.
+    - **Study Planner**: Daily schedules optimized for upcoming milestones.
+    - **Exam Prep Coach**: AI-driven strategy for competitive performance.
+- **Performance Analytics**: Real-time tracking of subject-wise attendance and marks.
+- **Visual Insights**: Polar Area charts for grade distribution and Doughnut charts for attendance.
+- **Achievement System**: Unlockable badges (e.g., Attendance Hero, Academic Elite) based on performance milestones.
+- **Leaderboard**: Compare performance with peers in the same branch/semester.
+- **Profile Management**: Detailed academic identity with roll number and branch info.
 
+### 🍎 Faculty Features
+- **Class Analytics**: High-level overview of class averages and attendance metrics.
+- **At-Risk Interventions**: AI-enhanced "Draft Warning" system for quick student follow-ups.
+- **Data Management**: Full CRUD operations for student marks and bulk CSV upload support.
+- **Performance Badging**: Highlight recent earners to foster positive reinforcement.
+- **Prescriptive Insights**: AI-generated suggestions for pedagogical improvements based on class trends.
+- **Export Capabilities**: Download class performance data in standardized formats.
+
+### 🛡️ Admin Features
+- **System-Wide Trends**: Market-style trend charts tracking Institutional Marks and Attendance over time.
+- **User Management Hub**: Advanced controls to Add Students/Faculty, Remove Users, or Suspend accounts temporarily.
+- **Institutional Notices**: Create and manage global announcements with Markdown support.
+- **Data Integrity**: Unified monitoring of academic records across all branches with historical data.
+
+---
+
+## 🏗️ Core Architecture & Tech Stack
+
+### 🌐 Frontend (Client-Side)
+- **Engine**: Vanilla JavaScript (ES6+) with Modular Design.
+- **Styling**: **Tailwind CSS** (Utility-first framework) + Vanilla CSS (**Glassmorphism**, Custom Keyframe Animations).
+- **Charts**: **Chart.js 3.9** (Advanced Polar Area, Doughnut, and Linear Market Trends).
+- **AI Integration**: **Google Gemini 1.5 Flash** for academic intelligence (Fallbacks included).
+- **Icons**: Font Awesome 6 Pro (CDN).
+- **Typography**: Google Fonts (Outfit).
+
+### 🖥️ Backend (Server-Side)
+- **Runtime**: **Node.js** with **Express.js** framework.
+- **Database**: **SQLite3** for persistent SQL-based storage.
+- **Security**: **JWT (JSON Web Tokens)** for secure stateless sessions and Role-Based Access Control (RBAC).
+- **Password Hashing**: **Bcrypt.js** for high-security credential storage.
+- **API Architecture**: REST APIs for Auth, Records, and Notifications.
+
+---
+
+## 📚 Technical Module Breakdown
+
+### `js/api-client.js`
+The gateway for all frontend-backend communication. It handles JWT header injection, centralized error handling, and standardized API response parsing for all modules.
+
+### `js/ai.js`
+Manages interaction with the Google Gemini API. Includes intelligent prompt engineering and logical fallbacks to mock academic analysis if API limits are reached.
+
+### `js/chart-manager.js`
+Dedicated visualization engine. Supports multiple chart types with dynamic theme adaptation (Dark/Light mode) and smooth data transitions.
+
+### `js/db.js` & `js/auth.js`
+Orchestrates the transition from legacy `localStorage` to the new SQL-backed session management. `auth.js` manages login flows and secure session persistence.
+
+### `js/ui.js` & `js/events.js`
+Core rendering logic and event orchestration. Implemented as a Single Page Application (SPA) experience with view-switching and real-time DOM updates.
+
+---
+
+## 📁 Project Structure
+
+```text
+Learning_project/
+├── backend/                   # Node.js Express Server
+│   ├── src/                  # Controllers, Routes, and API logic
+│   ├── database.sqlite       # Local Persistent Storage
+│   └── server.js             # API Gateway Entry Point
+├── Learning_project/          # Frontend Web Application
+│   ├── js/                   # Logical Modules (AI, Charts, API)
+│   ├── css/                  # Styling & Global Design Systems
+│   ├── frontend/             # Desktop/Mobile view templates
+│   └── Perfomence_tracker.html # Unified ERP interface
+├── performance_tracker_database.sql # Complete Database Seed Data
+└── README.md                  # Comprehensive Documentation
+```
+
+---
+
+## 🚀 Installation & Setup
+
+### 1. Prerequisites
+- **Node.js**: v16+ (LTS).
+- **Web Browser**: Chrome/Edge/Firefox (Latest).
+
+### 2. Implementation Steps
+```bash
+# Clone the project
+git clone <repository-url>
+cd Learning_project
+
+# Setup Backend Server
+cd backend
+npm install
+npm start
+```
+
+### 3. Usage
+The application is now hosted at `http://localhost:5000`. 
+- Open your browser to `http://localhost:5000` to access the full-stack system.
+- Ensure the backend is running to enable data persistence and AI features.
+
+---
+
+## 🔐 Credentials for Demo
+
+| Role | Username | Password | Access Level |
+|------|----------|----------|--------------|
+| **Administrator** | `admin` | `admin123` | Institutional Management |
+| **Faculty** | `faculty1` | `fac123` | Class & Department Control |
+| **Student** | `24CSEAIML063` | `password` | AI Learning Hub & Performance |
+
+---
+
+## 🚀 Performance & Security
+
+- **Persistence**: All data resides in a robust SQLite database, ensuring integrity across sessions.
+- **UI Responsiveness**: Glassmorphic UI with shimmering loading states and 0.2s cubic-bezier transitions.
+- **Lazy Rendering**: Efficient data visualization execution for zero-lag dashboard performance.
+- **JWT Protection**: Secure API endpoints ensuring only authorized roles can access or modify data.
+- **Input Sanitization**: Built-in XSS protection for chat messages and notifications.
+- **Compatibility**: Full support for all modern ES6+ compliant browsers.
+
+---
+
+## 🔮 Future Enhancements
+- **Multi-Branch Analytics**: Comparative data for different engineering branches.
+- **Email Alerts**: Automatic notifications for attendance dips below threshold.
+- **Learning Content**: Integrated study materials in the AI Learning Hub.
+- **Mobile PWA**: Progressive Web App for offline access and native-like experience.
+
+---
+**Last Updated**: March 25, 2026 | **Version**: 2.1.0 | **Author**: SUBRAT PANIGRAHI
